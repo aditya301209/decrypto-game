@@ -396,20 +396,18 @@
 
   <script>
     // ============================================
-    // FIREBASE CONFIG - REPLACE WITH YOUR OWN
-    // Get this from: https://console.firebase.google.com
-    // Project Settings → General → Your apps → Web app
+    // FIREBASE CONFIG
     // ============================================
     const firebaseConfig = {
-  apiKey: "AIzaSyBQfDW3cv268JlQRL7UeFhphR76hAStmS0",
-  authDomain: "mydecrypto-2cc47.firebaseapp.com",
-  databaseURL: "https://mydecrypto-2cc47-default-rtdb.firebaseio.com",
-  projectId: "mydecrypto-2cc47",
-  storageBucket: "mydecrypto-2cc47.firebasestorage.app",
-  messagingSenderId: "757533875276",
-  appId: "1:757533875276:web:28d3a9c5b8a9f5d5ec68e9",
-  measurementId: "G-K4P1KKFH89"
-};
+      apiKey: "AIzaSyBQfDW3cv268JlQRL7UeFhphR76hAStmS0",
+      authDomain: "mydecrypto-2cc47.firebaseapp.com",
+      databaseURL: "https://mydecrypto-2cc47-default-rtdb.firebaseio.com",
+      projectId: "mydecrypto-2cc47",
+      storageBucket: "mydecrypto-2cc47.firebasestorage.app",
+      messagingSenderId: "757533875276",
+      appId: "1:757533875276:web:28d3a9c5b8a9f5d5ec68e9",
+      measurementId: "G-K4P1KKFH89"
+    };
     // ============================================
 
     // Initialize Firebase
@@ -446,10 +444,7 @@
       console.log('✓ Firebase SDK loaded');
 
       try {
-        if (firebaseConfig.apiKey === "YOUR_API_KEY_HERE") {
-          console.error('❌ Firebase not configured');
-          updateConnectionStatus(false, 'Please configure Firebase (see README)');
-        } else if (!firebaseConfig.databaseURL || firebaseConfig.databaseURL.includes('YOUR_PROJECT')) {
+        if (!firebaseConfig.databaseURL || firebaseConfig.databaseURL.includes('YOUR_PROJECT')) {
           console.error('❌ Missing databaseURL');
           updateConnectionStatus(false, 'Missing database URL');
         } else {
