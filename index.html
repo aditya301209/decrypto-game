@@ -694,7 +694,7 @@
 
       if (currentGame.gameOver) {
         html += '<p style="text-align: center; font-size: 1.2em; color: #718096;">Game is over!</p>';
-      } else if (isMyTeamsTurn && myRole === 'cluegiver' && (!currentRound || !currentRound.clues)) {
+      } else if (isMyTeamsTurn && myRole === 'cluegiver' && (!currentRound || !currentRound?.clues)) {
         const code = generateCode();
         html += `
           <h2>Your Turn - Give Clues</h2>
@@ -708,7 +708,7 @@
           `).join('')}
           <button class="btn" onclick="submitClues([${code}])">Submit Clues</button>
         `;
-      } else if (isMyTeamsTurn && myRole === 'guesser' && currentRound && currentRound.clues && !currentRound.guess) {
+      } else if (isMyTeamsTurn && myRole === 'guesser' && currentRound?.clues && !currentRound?.guess) {
         html += `
           <h2>Your Turn - Guess the Code</h2>
           <div class="alert alert-info">
@@ -724,7 +724,7 @@
           </div>
           <button class="btn" onclick="submitGuess()">Submit Guess</button>
         `;
-      } else if (!isMyTeamsTurn && currentRound && currentRound.clues && !currentRound.interception) {
+      } else if (!isMyTeamsTurn && currentRound?.clues && !currentRound?.interception) {
         html += `
           <h2>Opponent's Turn - Attempt Interception</h2>
           <div class="alert alert-info">
