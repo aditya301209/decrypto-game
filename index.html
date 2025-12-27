@@ -567,6 +567,8 @@
     }
 
     async function joinGame() {
+      console.log('=== JOIN GAME DEBUG ===');
+      
       if (!isFirebaseConfigured) {
         alert('Firebase is not connected yet. Please wait or check the setup.');
         return;
@@ -575,6 +577,8 @@
       const code = document.getElementById('gameCodeInput').value.trim().toUpperCase();
       const team = document.getElementById('teamSelect').value;
       const role = document.getElementById('roleSelect').value;
+
+      console.log('Attempting to join:', { code, team, role });
 
       if (!code || !team || !role) {
         alert('Please fill in all fields');
@@ -587,27 +591,58 @@
         myRole = role;
         gameRef = db.ref(`games/${gameCode}`);
 
+        console.log('Fetching game data from Firebase...');
         const snapshot = await gameRef.once('value');
+        
         if (!snapshot.exists()) {
+          console.error('Game not found in database');
           alert('Game not found! Please check the code.');
           return;
         }
 
         currentGame = snapshot.val();
+        console.log('Game data loaded:', currentGame);
+        console.log('Current game structure check:', {
+          hasTeamA: !!currentGame.teamA,
+          hasTeamB: !!currentGame.teamB,
+          hasRounds: !!currentGame.rounds,
+          roundsLength: currentGame.rounds?.length,
+          currentRound: currentGame.currentRound,
+          currentTeam: currentGame.currentTeam
+        });
 
+        // Listen for real-time updates
+        console.log('Setting up real-time listener...');
         gameRef.on('value', (snapshot) => {
           if (snapshot.exists()) {
             currentGame = snapshot.val();
-            renderGame();
+            console.log('Game updated from Firebase');
+            try {
+              renderGame();
+            } catch (error) {
+              console.error('Error in renderGame:', error);
+              console.error('Stack trace:', error.stack);
+            }
           }
         });
 
+        console.log('Switching to game screen...');
         document.getElementById('setupScreen').style.display = 'none';
         document.getElementById('gameScreen').style.display = 'block';
         
-        renderGame();
+        console.log('Calling initial renderGame...');
+        try {
+          renderGame();
+        } catch (error) {
+          console.error('Error in initial renderGame:', error);
+          console.error('Stack trace:', error.stack);
+          alert('Error rendering game: ' + error.message);
+        }
+        
+        console.log('=== JOIN COMPLETE ===');
       } catch (error) {
         console.error('Error joining game:', error);
+        console.error('Stack trace:', error.stack);
         alert('Error joining game: ' + error.message);
       }
     }
@@ -622,32 +657,74 @@
     }
 
     function renderGame() {
-      document.getElementById('gameCodeDisplay').textContent = gameCode;
-      document.getElementById('playerInfo').textContent = 
-        `You are: Team ${myTeam} - ${myRole === 'cluegiver' ? 'Clue-Giver' : 'Guesser'} | Round ${currentGame.currentRound}`;
-
-      document.getElementById('teamAMiscomm').textContent = currentGame.teamA.score.miscommunications;
-      document.getElementById('teamBMiscomm').textContent = currentGame.teamB.score.miscommunications;
-      document.getElementById('teamAInterceptions').textContent = currentGame.teamA.score.interceptions;
-      document.getElementById('teamBInterceptions').textContent = currentGame.teamB.score.interceptions;
-
-      if (currentGame.gameOver) {
-        document.getElementById('gameOverMessage').style.display = 'block';
-        document.getElementById('gameOverMessage').innerHTML = `
-          <div class="game-over">
-            🎉 Game Over! ${currentGame.winner} wins! 🎉
-          </div>
-        `;
+      console.log('renderGame called');
+      
+      if (!currentGame) {
+        console.error('renderGame called but currentGame is null');
+        return;
       }
 
-      renderMyTeamSection();
-      renderOpponentSection();
-      renderActionSection();
-      renderHistory();
+      console.log('Rendering game with data:', {
+        gameCode,
+        myTeam,
+        myRole,
+        currentRound: currentGame.currentRound,
+        roundsCount: currentGame.rounds?.length
+      });
+
+      try {
+        document.getElementById('gameCodeDisplay').textContent = gameCode;
+        document.getElementById('playerInfo').textContent = 
+          `You are: Team ${myTeam} - ${myRole === 'cluegiver' ? 'Clue-Giver' : 'Guesser'} | Round ${currentGame.currentRound}`;
+
+        document.getElementById('teamAMiscomm').textContent = currentGame.teamA?.score?.miscommunications || 0;
+        document.getElementById('teamBMiscomm').textContent = currentGame.teamB?.score?.miscommunications || 0;
+        document.getElementById('teamAInterceptions').textContent = currentGame.teamA?.score?.interceptions || 0;
+        document.getElementById('teamBInterceptions').textContent = currentGame.teamB?.score?.interceptions || 0;
+
+        if (currentGame.gameOver) {
+          document.getElementById('gameOverMessage').style.display = 'block';
+          document.getElementById('gameOverMessage').innerHTML = `
+            <div class="game-over">
+              🎉 Game Over! ${currentGame.winner} wins! 🎉
+            </div>
+          `;
+        }
+
+        console.log('Calling renderMyTeamSection...');
+        renderMyTeamSection();
+        
+        console.log('Calling renderOpponentSection...');
+        renderOpponentSection();
+        
+        console.log('Calling renderActionSection...');
+        renderActionSection();
+        
+        console.log('Calling renderHistory...');
+        renderHistory();
+        
+        console.log('renderGame completed successfully');
+      } catch (error) {
+        console.error('Error in renderGame:', error);
+        console.error('Stack trace:', error.stack);
+        throw error;
+      }
     }
 
     function renderMyTeamSection() {
+      if (!currentGame) {
+        console.error('renderMyTeamSection called but currentGame is null');
+        return;
+      }
+
       const myTeamData = myTeam === 'A' ? currentGame.teamA : currentGame.teamB;
+      
+      if (!myTeamData || !myTeamData.words) {
+        console.error('Team data or words missing');
+        document.getElementById('myTeamSection').innerHTML = '<div class="card"><p>Loading team data...</p></div>';
+        return;
+      }
+
       const teamClass = myTeam === 'A' ? 'team-a' : 'team-b';
       
       const html = `
@@ -682,7 +759,13 @@
     }
 
     function renderActionSection() {
-      const currentRound = currentGame.rounds[currentGame.currentRound - 1];
+      if (!currentGame) {
+        console.error('renderActionSection called but currentGame is null');
+        document.getElementById('actionSection').innerHTML = '<div class="card"><p>Loading game...</p></div>';
+        return;
+      }
+
+      const currentRound = currentGame.rounds?.[currentGame.currentRound - 1];
       const isMyTeamsTurn = currentGame.currentTeam === myTeam;
       
       let html = '<div class="card">';
@@ -790,7 +873,13 @@
         return;
       }
 
-      const currentRound = currentGame.rounds[currentGame.currentRound - 1];
+      const currentRound = currentGame.rounds?.[currentGame.currentRound - 1];
+      if (!currentRound || !currentRound.code) {
+        alert('Error: Round data not found');
+        console.error('Current round missing or invalid:', currentRound);
+        return;
+      }
+
       const correct = JSON.stringify(guess) === JSON.stringify(currentRound.code);
       
       currentRound.guess = guess;
@@ -826,7 +915,13 @@
         return;
       }
 
-      const currentRound = currentGame.rounds[currentGame.currentRound - 1];
+      const currentRound = currentGame.rounds?.[currentGame.currentRound - 1];
+      if (!currentRound || !currentRound.code) {
+        alert('Error: Round data not found');
+        console.error('Current round missing or invalid:', currentRound);
+        return;
+      }
+
       const correct = JSON.stringify(interception) === JSON.stringify(currentRound.code);
       
       currentRound.interception = interception;
@@ -853,7 +948,13 @@
     }
 
     async function skipInterception() {
-      const currentRound = currentGame.rounds[currentGame.currentRound - 1];
+      const currentRound = currentGame.rounds?.[currentGame.currentRound - 1];
+      if (!currentRound) {
+        alert('Error: Round data not found');
+        console.error('Current round missing');
+        return;
+      }
+
       currentRound.interception = null;
       currentRound.interceptionCorrect = false;
 
@@ -874,7 +975,7 @@
     }
 
     function renderHistory() {
-      if (currentGame.rounds.length === 0) {
+      if (!currentGame || !currentGame.rounds || currentGame.rounds.length === 0) {
         document.getElementById('historySection').innerHTML = '';
         return;
       }
