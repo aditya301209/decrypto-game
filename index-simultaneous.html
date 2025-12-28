@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Decrypto - Simultaneous Play</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+      color: #333;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      color: #667eea;
+      margin-bottom: 10px;
+      font-size: 2.5em;
+    }
+
+    h2 {
+      color: #667eea;
+      margin-bottom: 15px;
+      font-size: 1.8em;
+    }
+
+    h3 {
+      color: #764ba2;
+      margin-bottom: 10px;
+      font-size: 1.3em;
+    }
+
+    .btn {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      transition: all 0.3s;
+      margin-right: 10px;
+      margin-top: 10px;
+    }
+
+    .btn:hover {
+      background: #764ba2;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .btn:disabled {
+      background: #a0aec0;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: #48bb78;
+    }
+
+    .btn-secondary:hover {
+      background: #38a169;
+    }
+
+    .btn-danger {
+      background: #f56565;
+    }
+
+    .btn-danger:hover {
+      background: #e53e3e;
+    }
+
+    .btn-large {
+      font-size: 1.3em;
+      padding: 20px 40px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 16px;
+      margin-bottom: 15px;
+      transition: border 0.3s;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .team-a {
+      background: #ebf8ff;
+      border-left: 4px solid #3182ce;
+    }
+
+    .team-b {
+      background: #fef5e7;
+      border-left: 4px solid #dd6b20;
+    }
+
+    .words-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin: 20px 0;
+    }
+
+    .word-card {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 1.2em;
+      font-weight: bold;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .word-card .number {
+      color: #667eea;
+      font-size: 0.9em;
+      margin-bottom: 5px;
+    }
+
+    .code-display {
+      background: #fef5e7;
+      border: 3px dashed #dd6b20;
+      padding: 30px;
+      border-radius: 12px;
+      text-align: center;
+      font-size: 3em;
+      font-weight: bold;
+      color: #dd6b20;
+      letter-spacing: 20px;
+      margin: 20px 0;
+    }
+
+    .clue-input-grid {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 15px;
+      align-items: center;
+      margin: 10px 0;
+    }
+
+    .clue-label {
+      font-weight: bold;
+      color: #667eea;
+      font-size: 1.2em;
+    }
+
+    .history-item {
+      background: #f7fafc;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      border-left: 4px solid #667eea;
+    }
+
+    .round-header {
+      font-weight: bold;
+      color: #667eea;
+      margin-bottom: 8px;
+    }
+
+    .score-display {
+      display: flex;
+      justify-content: space-around;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+
+    .score-item {
+      text-align: center;
+      padding: 20px;
+      background: #f7fafc;
+      border-radius: 8px;
+      flex: 1;
+      margin: 10px;
+      min-width: 150px;
+    }
+
+    .score-value {
+      font-size: 3em;
+      font-weight: bold;
+      color: #667eea;
+    }
+
+    .score-label {
+      font-size: 0.9em;
+      color: #718096;
+      margin-top: 5px;
+    }
+
+    .alert {
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+
+    .alert-success {
+      background: #c6f6d5;
+      color: #22543d;
+      border-left: 4px solid #48bb78;
+    }
+
+    .alert-info {
+      background: #bee3f8;
+      color: #2c5282;
+      border-left: 4px solid #3182ce;
+    }
+
+    .alert-warning {
+      background: #fef5e7;
+      color: #744210;
+      border-left: 4px solid #dd6b20;
+    }
+
+    .game-over {
+      text-align: center;
+      padding: 40px;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      border-radius: 12px;
+      font-size: 2em;
+    }
+
+    .status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+
+    .status-connected {
+      background: #48bb78;
+    }
+
+    .status-disconnected {
+      background: #f56565;
+    }
+
+    .code-input-group {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin: 15px 0;
+    }
+
+    .code-input-group input {
+      width: 60px;
+      height: 60px;
+      text-align: center;
+      font-size: 2em;
+      font-weight: bold;
+      margin: 0;
+    }
+
+    .phase-indicator {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      font-size: 1.5em;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    .results-card {
+      background: #f7fafc;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 15px 0;
+    }
+
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 6px;
+    }
+
+    .result-row.correct {
+      background: #c6f6d5;
+    }
+
+    .result-row.incorrect {
+      background: #fed7d7;
+    }
+
+    @media (max-width: 768px) {
+      .words-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      h1 {
+        font-size: 1.8em;
+      }
+
+      .score-display {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>🔐 Decrypto - Simultaneous Play</h1>
+      <p style="color: #718096; margin-bottom: 20px;">Both teams play at the same time! <span id="connectionStatus"></span></p>
+      
+      <div id="setupScreen">
+        <h2>Game Setup</h2>
+        
+        <div style="margin-bottom: 30px;">
+          <h3>Create New Game</h3>
+          <button class="btn" onclick="createGame()">Create New Game</button>
+        </div>
+
+        <div>
+          <h3>Join Existing Game</h3>
+          <input type="text" id="gameCodeInput" placeholder="Enter game code">
+          <select id="teamSelect">
+            <option value="">Select Team</option>
+            <option value="A">Team A (Blue)</option>
+            <option value="B">Team B (Orange)</option>
+          </select>
+          <select id="roleSelect">
+            <option value="">Select Role</option>
+            <option value="guesser">Guesser</option>
+            <option value="cluegiver">Clue-Giver</option>
+          </select>
+          <button class="btn btn-secondary" onclick="joinGame()">Join Game</button>
+        </div>
+      </div>
+
+      <div id="gameScreen" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap;">
+          <div>
+            <h2 id="gameTitle">Game: <span id="gameCodeDisplay"></span></h2>
+            <p id="playerInfo" style="color: #718096;"></p>
+          </div>
+          <div>
+            <button class="btn btn-danger" onclick="leaveGame()">Leave Game</button>
+          </div>
+        </div>
+
+        <div id="phaseIndicator" class="phase-indicator"></div>
+
+        <div id="gameOverMessage" style="display: none;"></div>
+
+        <div class="score-display">
+          <div class="score-item team-a">
+            <div class="score-value" id="teamAMiscomm">0</div>
+            <div class="score-label">Team A Miscommunications</div>
+          </div>
+          <div class="score-item team-b">
+            <div class="score-value" id="teamBMiscomm">0</div>
+            <div class="score-label">Team B Miscommunications</div>
+          </div>
+          <div class="score-item team-a">
+            <div class="score-value" id="teamAInterceptions">0</div>
+            <div class="score-label">Team A Interceptions</div>
+          </div>
+          <div class="score-item team-b">
+            <div class="score-value" id="teamBInterceptions">0</div>
+            <div class="score-label">Team B Interceptions</div>
+          </div>
+        </div>
+
+        <div id="myTeamSection"></div>
+        <div id="actionSection"></div>
+        <div id="historySection"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+  <script>
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyBQfDW3cv268JlQRL7UeFhphR76hAStmS0",
+      authDomain: "mydecrypto-2cc47.firebaseapp.com",
+      databaseURL: "https://mydecrypto-2cc47-default-rtdb.firebaseio.com",
+      projectId: "mydecrypto-2cc47",
+      storageBucket: "mydecrypto-2cc47.firebasestorage.app",
+      messagingSenderId: "757533875276",
+      appId: "1:757533875276:web:28d3a9c5b8a9f5d5ec68e9",
+      measurementId: "G-K4P1KKFH89"
+    };
+
+    // Initialize Firebase
+    let db = null;
+    let isFirebaseConfigured = false;
+
+    function updateConnectionStatus(connected) {
+      const statusEl = document.getElementById('connectionStatus');
+      if (connected) {
+        statusEl.innerHTML = '<span class="status-indicator status-connected"></span>Connected';
+      } else {
+        statusEl.innerHTML = '<span class="status-indicator status-disconnected"></span>Not Connected';
+      }
+    }
+
+    function initializeFirebase() {
+      if (typeof firebase === 'undefined') {
+        updateConnectionStatus(false);
+        return;
+      }
+
+      try {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.database();
+        
+        db.ref('.info/connected').on('value', (snapshot) => {
+          if (snapshot.val() === true) {
+            isFirebaseConfigured = true;
+            updateConnectionStatus(true);
+          }
+        });
+      } catch (error) {
+        console.error('Firebase error:', error);
+        updateConnectionStatus(false);
+      }
+    }
+
+    window.addEventListener('load', initializeFirebase);
+
+    // Game state
+    let currentGame = null;
+    let myTeam = null;
+    let myRole = null;
+    let gameCode = null;
+    let gameRef = null;
+
+    const WORD_BANK = [
+      "PIANO", "THUNDER", "DIAMOND", "CASTLE", "ROBOT", "OCEAN", "ROCKET", "DRAGON",
+      "MAGIC", "FOREST", "CLOCK", "MIRROR", "BOOK", "STAR", "MOON", "FIRE",
+      "WATER", "EARTH", "WIND", "MOUNTAIN", "RIVER", "BRIDGE", "TOWER", "CROWN",
+      "SWORD", "SHIELD", "ARROW", "GATE", "WALL", "PATH", "ROAD", "SHIP",
+      "COIN", "RING", "KEY", "LOCK", "DOOR", "WINDOW", "LIGHT", "SHADOW",
+      "CLOUD", "RAIN", "SNOW", "SUN", "NIGHT", "DAY", "TIME", "SPACE",
+      "HEART", "MIND", "SOUL", "DREAM", "HOPE", "FEAR", "JOY", "PEACE",
+      "WAR", "KING", "QUEEN", "KNIGHT", "ANGEL", "DEMON", "GHOST", "SPIRIT"
+    ];
+
+    function generateGameCode() {
+      return Math.random().toString(36).substring(2, 8).toUpperCase();
+    }
+
+    function getRandomWords(count) {
+      const shuffled = [...WORD_BANK].sort(() => Math.random() - 0.5);
+      return shuffled.slice(0, count);
+    }
+
+    function generateCode() {
+      return [
+        Math.floor(Math.random() * 4) + 1,
+        Math.floor(Math.random() * 4) + 1,
+        Math.floor(Math.random() * 4) + 1
+      ];
+    }
+
+    async function createGame() {
+      if (!isFirebaseConfigured) {
+        alert('Firebase is not connected yet.');
+        return;
+      }
+
+      gameCode = generateGameCode();
+      
+      const newGame = {
+        code: gameCode,
+        teamA: {
+          words: getRandomWords(4),
+          score: { miscommunications: 0, interceptions: 0 }
+        },
+        teamB: {
+          words: getRandomWords(4),
+          score: { miscommunications: 0, interceptions: 0 }
+        },
+        rounds: [],
+        currentRound: 1,
+        phase: 'clues', // clues, guessing, results
+        roundData: {
+          teamA: { code: null, clues: null, guess: null, interception: null },
+          teamB: { code: null, clues: null, guess: null, interception: null }
+        },
+        gameOver: false,
+        winner: null
+      };
+
+      try {
+        await db.ref(`games/${gameCode}`).set(newGame);
+        
+        const setupScreen = document.getElementById('setupScreen');
+        setupScreen.innerHTML = `
+          <div style="text-align: center; padding: 40px;">
+            <h2 style="color: #48bb78; margin-bottom: 20px;">✓ Game Created!</h2>
+            <div style="background: #c6f6d5; padding: 30px; border-radius: 12px; margin: 20px 0;">
+              <p style="font-size: 1.2em; margin-bottom: 10px; color: #22543d;">Share this code:</p>
+              <div style="font-size: 3em; font-weight: bold; color: #22543d; letter-spacing: 8px;">${gameCode}</div>
+            </div>
+            <input type="text" id="gameCodeInput" value="${gameCode}" readonly style="background: #f7fafc;">
+            <select id="teamSelect">
+              <option value="">Select Team</option>
+              <option value="A">Team A (Blue)</option>
+              <option value="B">Team B (Orange)</option>
+            </select>
+            <select id="roleSelect">
+              <option value="">Select Role</option>
+              <option value="guesser">Guesser</option>
+              <option value="cluegiver">Clue-Giver</option>
+            </select>
+            <button class="btn btn-secondary" onclick="joinGame()">Join Game</button>
+          </div>
+        `;
+      } catch (error) {
+        console.error('Error creating game:', error);
+        alert('Error creating game: ' + error.message);
+      }
+    }
+
+    async function joinGame() {
+      if (!isFirebaseConfigured) {
+        alert('Firebase is not connected yet.');
+        return;
+      }
+
+      const code = document.getElementById('gameCodeInput').value.trim().toUpperCase();
+      const team = document.getElementById('teamSelect').value;
+      const role = document.getElementById('roleSelect').value;
+
+      if (!code || !team || !role) {
+        alert('Please fill in all fields');
+        return;
+      }
+
+      try {
+        gameCode = code;
+        myTeam = team;
+        myRole = role;
+        gameRef = db.ref(`games/${gameCode}`);
+
+        const snapshot = await gameRef.once('value');
+        if (!snapshot.exists()) {
+          alert('Game not found!');
+          return;
+        }
+
+        currentGame = snapshot.val();
+
+        gameRef.on('value', (snapshot) => {
+          if (snapshot.exists()) {
+            currentGame = snapshot.val();
+            renderGame();
+          }
+        });
+
+        document.getElementById('setupScreen').style.display = 'none';
+        document.getElementById('gameScreen').style.display = 'block';
+        
+        renderGame();
+      } catch (error) {
+        console.error('Error joining game:', error);
+        alert('Error joining game: ' + error.message);
+      }
+    }
+
+    function leaveGame() {
+      if (confirm('Are you sure you want to leave?')) {
+        if (gameRef) gameRef.off();
+        location.reload();
+      }
+    }
+
+    function renderGame() {
+      if (!currentGame) return;
+
+      document.getElementById('gameCodeDisplay').textContent = gameCode;
+      document.getElementById('playerInfo').textContent = 
+        `You are: Team ${myTeam} - ${myRole === 'cluegiver' ? 'Clue-Giver' : 'Guesser'} | Round ${currentGame.currentRound}`;
+
+      document.getElementById('teamAMiscomm').textContent = currentGame.teamA?.score?.miscommunications || 0;
+      document.getElementById('teamBMiscomm').textContent = currentGame.teamB?.score?.miscommunications || 0;
+      document.getElementById('teamAInterceptions').textContent = currentGame.teamA?.score?.interceptions || 0;
+      document.getElementById('teamBInterceptions').textContent = currentGame.teamB?.score?.interceptions || 0;
+
+      if (currentGame.gameOver) {
+        document.getElementById('gameOverMessage').style.display = 'block';
+        document.getElementById('gameOverMessage').innerHTML = `
+          <div class="game-over">
+            🎉 Game Over! ${currentGame.winner} wins! 🎉
+          </div>
+        `;
+      }
+
+      renderPhaseIndicator();
+      renderMyTeamSection();
+      renderActionSection();
+      renderHistory();
+    }
+
+    function renderPhaseIndicator() {
+      const phase = currentGame.phase;
+      let phaseText = '';
+      
+      if (phase === 'clues') {
+        phaseText = '📝 Phase 1: Clue-Givers - Give your clues!';
+      } else if (phase === 'guessing') {
+        phaseText = '🎯 Phase 2: Guessing & Interception';
+      } else if (phase === 'results') {
+        phaseText = '📊 Phase 3: Results - Click to continue';
+      }
+      
+      document.getElementById('phaseIndicator').textContent = phaseText;
+    }
+
+    function renderMyTeamSection() {
+      if (!currentGame) return;
+
+      const myTeamData = myTeam === 'A' ? currentGame.teamA : currentGame.teamB;
+      if (!myTeamData?.words) return;
+
+      const teamClass = myTeam === 'A' ? 'team-a' : 'team-b';
+      
+      const html = `
+        <div class="card ${teamClass}">
+          <h2>Your Team (Team ${myTeam}) - Secret Words</h2>
+          <div class="words-grid">
+            ${myTeamData.words.map((word, idx) => `
+              <div class="word-card">
+                <div class="number">#${idx + 1}</div>
+                <div>${word}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+      
+      document.getElementById('myTeamSection').innerHTML = html;
+    }
+
+    function renderActionSection() {
+      if (!currentGame) return;
+
+      const phase = currentGame.phase;
+      const myTeamKey = `team${myTeam}`;
+      const opponentTeam = myTeam === 'A' ? 'B' : 'A';
+      const opponentTeamKey = `team${opponentTeam}`;
+      const myTeamRoundData = currentGame.roundData[myTeamKey];
+      const opponentRoundData = currentGame.roundData[opponentTeamKey];
+
+      let html = '<div class="card">';
+
+      if (currentGame.gameOver) {
+        html += '<p style="text-align: center; font-size: 1.2em;">Game is over!</p>';
+      } else if (phase === 'clues' && myRole === 'cluegiver') {
+        // Clue-giving phase
+        if (!myTeamRoundData.clues) {
+          const code = myTeamRoundData.code || generateCode();
+          html += `
+            <h2>Give Your Clues</h2>
+            <div class="code-display">${code.join(' ')}</div>
+            <p style="margin-bottom: 15px;">Give one clue for each number:</p>
+            ${code.map((num, idx) => `
+              <div class="clue-input-grid">
+                <div class="clue-label">Clue for #${num}:</div>
+                <input type="text" id="clue${idx}" placeholder="Enter clue">
+              </div>
+            `).join('')}
+            <button class="btn btn-large" onclick="submitClues([${code}])">Submit Clues</button>
+          `;
+        } else {
+          html += `
+            <div class="alert alert-success">
+              <strong>✓ Your clues submitted!</strong><br>
+              Waiting for other clue-giver...
+            </div>
+          `;
+        }
+      } else if (phase === 'guessing' && myRole === 'guesser') {
+        // Guessing & interception phase
+        html += '<h2>Guessing Phase</h2>';
+        
+        // Guess your own team's code
+        if (myTeamRoundData.clues && !myTeamRoundData.guess) {
+          html += `
+            <div class="alert alert-info">
+              <strong>Your Team's Clues:</strong><br>
+              ${myTeamRoundData.clues.map((c, i) => `Clue ${i+1}: ${c}`).join('<br>')}
+            </div>
+            <p style="margin: 15px 0;">Guess your team's code:</p>
+            <div class="code-input-group">
+              <input type="number" id="guess0" min="1" max="4">
+              <input type="number" id="guess1" min="1" max="4">
+              <input type="number" id="guess2" min="1" max="4">
+            </div>
+            <button class="btn" onclick="submitGuess()">Submit Guess</button>
+          `;
+        } else if (myTeamRoundData.guess) {
+          html += `<div class="alert alert-success">✓ Your guess submitted!</div>`;
+        }
+
+        // Intercept opponent's code
+        if (opponentRoundData.clues && !myTeamRoundData.interception) {
+          html += `
+            <hr style="margin: 30px 0;">
+            <div class="alert alert-warning">
+              <strong>Opponent's Clues:</strong><br>
+              ${opponentRoundData.clues.map((c, i) => `Clue ${i+1}: ${c}`).join('<br>')}
+            </div>
+            <p style="margin: 15px 0;">Try to intercept their code:</p>
+            <div class="code-input-group">
+              <input type="number" id="intercept0" min="1" max="4">
+              <input type="number" id="intercept1" min="1" max="4">
+              <input type="number" id="intercept2" min="1" max="4">
+            </div>
+            <button class="btn" onclick="submitInterception()">Attempt Interception</button>
+            <button class="btn btn-secondary" onclick="skipInterception()">Skip</button>
+          `;
+        } else if (myTeamRoundData.interception) {
+          html += `<div class="alert alert-success">✓ Interception submitted!</div>`;
+        }
+      } else if (phase === 'results') {
+        // Results phase - anyone can advance
+        html += '<h2>Round Results</h2>';
+        html += '<div class="results-card">';
+        
+        // Team A results
+        const teamAData = currentGame.roundData.teamA;
+        const teamACorrect = JSON.stringify(teamAData.guess) === JSON.stringify(teamAData.code);
+        const teamBInterceptedA = JSON.stringify(currentGame.roundData.teamB.interception) === JSON.stringify(teamAData.code);
+        
+        html += `<h3>Team A (Blue)</h3>`;
+        html += `<div class="result-row">Code: ${teamAData.code.join(' ')}</div>`;
+        html += `<div class="result-row ${teamACorrect ? 'correct' : 'incorrect'}">
+          Guess: ${teamAData.guess.join(' ')} ${teamACorrect ? '✓ Correct' : '✗ Miscommunication!'}
+        </div>`;
+        if (currentGame.roundData.teamB.interception) {
+          html += `<div class="result-row ${teamBInterceptedA ? 'incorrect' : 'correct'}">
+            Team B Interception: ${currentGame.roundData.teamB.interception.join(' ')} ${teamBInterceptedA ? '✓ Success!' : '✗ Failed'}
+          </div>`;
+        }
+        
+        // Team B results
+        const teamBData = currentGame.roundData.teamB;
+        const teamBCorrect = JSON.stringify(teamBData.guess) === JSON.stringify(teamBData.code);
+        const teamAInterceptedB = JSON.stringify(currentGame.roundData.teamA.interception) === JSON.stringify(teamBData.code);
+        
+        html += `<h3 style="margin-top: 20px;">Team B (Orange)</h3>`;
+        html += `<div class="result-row">Code: ${teamBData.code.join(' ')}</div>`;
+        html += `<div class="result-row ${teamBCorrect ? 'correct' : 'incorrect'}">
+          Guess: ${teamBData.guess.join(' ')} ${teamBCorrect ? '✓ Correct' : '✗ Miscommunication!'}
+        </div>`;
+        if (currentGame.roundData.teamA.interception) {
+          html += `<div class="result-row ${teamAInterceptedB ? 'incorrect' : 'correct'}">
+            Team A Interception: ${currentGame.roundData.teamA.interception.join(' ')} ${teamAInterceptedB ? '✓ Success!' : '✗ Failed'}
+          </div>`;
+        }
+        
+        html += '</div>';
+        html += '<button class="btn btn-large" onclick="nextRound()">Continue to Next Round</button>';
+      } else {
+        html += '<p style="text-align: center;">Waiting for your turn...</p>';
+      }
+
+      html += '</div>';
+      document.getElementById('actionSection').innerHTML = html;
+    }
+
+    async function submitClues(code) {
+      const clues = [
+        document.getElementById('clue0').value.trim(),
+        document.getElementById('clue1').value.trim(),
+        document.getElementById('clue2').value.trim()
+      ];
+
+      if (clues.some(c => !c)) {
+        alert('Please enter all three clues');
+        return;
+      }
+
+      const myTeamKey = `team${myTeam}`;
+      currentGame.roundData[myTeamKey].code = code;
+      currentGame.roundData[myTeamKey].clues = clues;
+
+      // Check if both teams submitted clues
+      if (currentGame.roundData.teamA.clues && currentGame.roundData.teamB.clues) {
+        currentGame.phase = 'guessing';
+      }
+
+      try {
+        await gameRef.set(currentGame);
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    }
+
+    async function submitGuess() {
+      const guess = [
+        parseInt(document.getElementById('guess0').value),
+        parseInt(document.getElementById('guess1').value),
+        parseInt(document.getElementById('guess2').value)
+      ];
+
+      if (guess.some(g => !g || g < 1 || g > 4)) {
+        alert('Please enter valid numbers (1-4)');
+        return;
+      }
+
+      const myTeamKey = `team${myTeam}`;
+      currentGame.roundData[myTeamKey].guess = guess;
+
+      checkPhaseComplete();
+
+      try {
+        await gameRef.set(currentGame);
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    }
+
+    async function submitInterception() {
+      const interception = [
+        parseInt(document.getElementById('intercept0').value),
+        parseInt(document.getElementById('intercept1').value),
+        parseInt(document.getElementById('intercept2').value)
+      ];
+
+      if (interception.some(g => !g || g < 1 || g > 4)) {
+        alert('Please enter valid numbers (1-4)');
+        return;
+      }
+
+      const myTeamKey = `team${myTeam}`;
+      currentGame.roundData[myTeamKey].interception = interception;
+
+      checkPhaseComplete();
+
+      try {
+        await gameRef.set(currentGame);
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    }
+
+    async function skipInterception() {
+      const myTeamKey = `team${myTeam}`;
+      currentGame.roundData[myTeamKey].interception = [0, 0, 0]; // Dummy value
+
+      checkPhaseComplete();
+
+      try {
+        await gameRef.set(currentGame);
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    }
+
+    function checkPhaseComplete() {
+      // Check if both teams guessed and attempted interception
+      if (currentGame.roundData.teamA.guess && currentGame.roundData.teamB.guess &&
+          currentGame.roundData.teamA.interception && currentGame.roundData.teamB.interception) {
+        
+        // Calculate results
+        const teamACorrect = JSON.stringify(currentGame.roundData.teamA.guess) === JSON.stringify(currentGame.roundData.teamA.code);
+        const teamBCorrect = JSON.stringify(currentGame.roundData.teamB.guess) === JSON.stringify(currentGame.roundData.teamB.code);
+        const teamAIntercepted = JSON.stringify(currentGame.roundData.teamA.interception) === JSON.stringify(currentGame.roundData.teamB.code);
+        const teamBIntercepted = JSON.stringify(currentGame.roundData.teamB.interception) === JSON.stringify(currentGame.roundData.teamA.code);
+
+        // Update scores
+        if (!teamACorrect) currentGame.teamA.score.miscommunications++;
+        if (!teamBCorrect) currentGame.teamB.score.miscommunications++;
+        if (teamBIntercepted) currentGame.teamB.score.interceptions++;
+        if (teamAIntercepted) currentGame.teamA.score.interceptions++;
+
+        // Check win conditions
+        if (currentGame.teamA.score.miscommunications >= 2) {
+          currentGame.gameOver = true;
+          currentGame.winner = 'Team B (Orange)';
+        } else if (currentGame.teamB.score.miscommunications >= 2) {
+          currentGame.gameOver = true;
+          currentGame.winner = 'Team A (Blue)';
+        } else if (currentGame.teamA.score.interceptions >= 2) {
+          currentGame.gameOver = true;
+          currentGame.winner = 'Team A (Blue)';
+        } else if (currentGame.teamB.score.interceptions >= 2) {
+          currentGame.gameOver = true;
+          currentGame.winner = 'Team B (Orange)';
+        }
+
+        // Save round to history
+        currentGame.rounds.push({
+          round: currentGame.currentRound,
+          teamA: { ...currentGame.roundData.teamA },
+          teamB: { ...currentGame.roundData.teamB }
+        });
+
+        currentGame.phase = 'results';
+      }
+    }
+
+    async function nextRound() {
+      currentGame.currentRound++;
+      currentGame.phase = 'clues';
+      currentGame.roundData = {
+        teamA: { code: null, clues: null, guess: null, interception: null },
+        teamB: { code: null, clues: null, guess: null, interception: null }
+      };
+
+      try {
+        await gameRef.set(currentGame);
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    }
+
+    function renderHistory() {
+      if (!currentGame?.rounds || currentGame.rounds.length === 0) {
+        document.getElementById('historySection').innerHTML = '';
+        return;
+      }
+
+      let html = '<div class="card"><h2>Game History</h2>';
+
+      currentGame.rounds.forEach(round => {
+        html += `<div class="history-item"><strong>Round ${round.round}</strong></div>`;
+      });
+
+      html += '</div>';
+      document.getElementById('historySection').innerHTML = html;
+    }
+  </script>
+</body>
+</html>
