@@ -614,8 +614,16 @@
         // Listen for real-time updates
         console.log('Setting up real-time listener...');
         gameRef.on('value', (snapshot) => {
+          console.log('📡 Firebase update received');
           if (snapshot.exists()) {
-            currentGame = snapshot.val();
+            const newGameData = snapshot.val();
+            console.log('New game data:', {
+              currentRound: newGameData.currentRound,
+              currentTeam: newGameData.currentTeam,
+              roundsCount: newGameData.rounds?.length,
+              latestRound: newGameData.rounds?.[newGameData.currentRound - 1]
+            });
+            currentGame = newGameData;
             console.log('Game updated from Firebase');
             try {
               renderGame();
@@ -759,6 +767,8 @@
     }
 
     function renderActionSection() {
+      console.log('=== RENDER ACTION SECTION ===');
+      
       if (!currentGame) {
         console.error('renderActionSection called but currentGame is null');
         document.getElementById('actionSection').innerHTML = '<div class="card"><p>Loading game...</p></div>';
@@ -768,11 +778,27 @@
       const currentRound = currentGame.rounds?.[currentGame.currentRound - 1];
       const isMyTeamsTurn = currentGame.currentTeam === myTeam;
       
+      console.log('Action section state:', {
+        myTeam,
+        myRole,
+        currentTeam: currentGame.currentTeam,
+        isMyTeamsTurn,
+        currentRoundNumber: currentGame.currentRound,
+        currentRound: currentRound ? {
+          hasClues: !!currentRound.clues,
+          cluesLength: currentRound.clues?.length,
+          hasGuess: !!currentRound.guess,
+          hasInterception: !!currentRound.interception
+        } : 'no round'
+      });
+      
       let html = '<div class="card">';
 
       if (currentGame.gameOver) {
+        console.log('→ Game is over');
         html += '<p style="text-align: center; font-size: 1.2em; color: #718096;">Game is over!</p>';
       } else if (isMyTeamsTurn && myRole === 'cluegiver' && (!currentRound || !currentRound?.clues)) {
+        console.log('→ Showing clue-giver input');
         const code = generateCode();
         html += `
           <h2>Your Turn - Give Clues</h2>
@@ -787,6 +813,7 @@
           <button class="btn" onclick="submitClues([${code}])">Submit Clues</button>
         `;
       } else if (isMyTeamsTurn && myRole === 'guesser' && currentRound?.clues && Array.isArray(currentRound.clues) && currentRound.clues.length >= 3 && !currentRound?.guess) {
+        console.log('→ Showing guesser input');
         html += `
           <h2>Your Turn - Guess the Code</h2>
           <div class="alert alert-info">
@@ -803,6 +830,7 @@
           <button class="btn" onclick="submitGuess()">Submit Guess</button>
         `;
       } else if (!isMyTeamsTurn && currentRound?.clues && Array.isArray(currentRound.clues) && currentRound.clues.length >= 3 && !currentRound?.interception) {
+        console.log('→ Showing interception input');
         html += `
           <h2>Opponent's Turn - Attempt Interception</h2>
           <div class="alert alert-info">
@@ -820,19 +848,45 @@
           <button class="btn btn-secondary" onclick="skipInterception()">Skip</button>
         `;
       } else {
-        html += '<p style="text-align: center; color: #718096;">Waiting for other players...</p>';
+        console.log('→ Showing waiting message');
+        
+        // Determine what we're waiting for
+        let waitingMsg = 'Waiting for other players...';
+        
+        if (!currentRound) {
+          waitingMsg = 'Waiting for clue-giver to start the round...';
+        } else if (currentRound.clues && !currentRound.guess) {
+          if (isMyTeamsTurn) {
+            waitingMsg = 'Waiting for your guesser to make a guess...';
+          } else {
+            waitingMsg = 'Waiting for opponent guesser to make a guess...';
+          }
+        } else if (currentRound.guess && !currentRound.interception) {
+          waitingMsg = 'Waiting for opponent team to attempt interception...';
+        } else if (currentRound.interception) {
+          waitingMsg = 'Round complete. Waiting for next team to give clues...';
+        }
+        
+        console.log('Waiting message:', waitingMsg);
+        html += `<p style="text-align: center; color: #718096;">${waitingMsg}</p>`;
       }
 
       html += '</div>';
       document.getElementById('actionSection').innerHTML = html;
+      console.log('=== END RENDER ACTION SECTION ===');
     }
 
     async function submitClues(code) {
+      console.log('=== SUBMIT CLUES DEBUG ===');
+      console.log('Code to submit:', code);
+      
       const clues = [
         document.getElementById('clue0').value.trim(),
         document.getElementById('clue1').value.trim(),
         document.getElementById('clue2').value.trim()
       ];
+
+      console.log('Clues entered:', clues);
 
       if (clues.some(c => !c)) {
         alert('Please enter all three clues');
@@ -850,15 +904,24 @@
         interceptionCorrect: null
       };
 
+      console.log('Creating round:', round);
+      console.log('Current game before update:', JSON.stringify(currentGame, null, 2));
+
       currentGame.rounds[currentGame.currentRound - 1] = round;
 
+      console.log('Game after adding round:', JSON.stringify(currentGame, null, 2));
+
       try {
+        console.log('Saving to Firebase...');
         await gameRef.set(currentGame);
+        console.log('✓ Saved successfully');
         alert('Clues submitted!');
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Error submitting clues:', error);
         alert('Error submitting clues');
       }
+      
+      console.log('=== SUBMIT CLUES COMPLETE ===');
     }
 
     async function submitGuess() {
