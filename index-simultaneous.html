@@ -514,8 +514,8 @@
         currentRound: 1,
         phase: 'clues', // clues, guessing, results
         roundData: {
-          teamA: { code: null, clues: null, guess: null, interception: null },
-          teamB: { code: null, clues: null, guess: null, interception: null }
+          A: { code: null, clues: null, guess: null, interception: null },
+          B: { code: null, clues: null, guess: null, interception: null }
         },
         gameOver: false,
         winner: null
@@ -676,11 +676,11 @@
       if (!currentGame) return;
 
       const phase = currentGame.phase;
-      const myTeamKey = `team${myTeam}`;
+      const myTeamKey = myTeam;
       const opponentTeam = myTeam === 'A' ? 'B' : 'A';
-      const opponentTeamKey = `team${opponentTeam}`;
-      const myTeamRoundData = currentGame.roundData[myTeamKey];
-      const opponentRoundData = currentGame.roundData[opponentTeamKey];
+      const opponentTeamKey = opponentTeam;
+      const myTeamRoundData = currentGame.roundData?.[myTeamKey] || {};
+      const opponentRoundData = currentGame.roundData?.[opponentTeamKey] || {};
 
       let html = '<div class="card">';
 
@@ -759,34 +759,34 @@
         html += '<div class="results-card">';
         
         // Team A results
-        const teamAData = currentGame.roundData.teamA;
+        const teamAData = currentGame.roundData.A;
         const teamACorrect = JSON.stringify(teamAData.guess) === JSON.stringify(teamAData.code);
-        const teamBInterceptedA = JSON.stringify(currentGame.roundData.teamB.interception) === JSON.stringify(teamAData.code);
+        const teamBInterceptedA = JSON.stringify(currentGame.roundData.B.interception) === JSON.stringify(teamAData.code);
         
         html += `<h3>Team A (Blue)</h3>`;
         html += `<div class="result-row">Code: ${teamAData.code.join(' ')}</div>`;
         html += `<div class="result-row ${teamACorrect ? 'correct' : 'incorrect'}">
           Guess: ${teamAData.guess.join(' ')} ${teamACorrect ? '✓ Correct' : '✗ Miscommunication!'}
         </div>`;
-        if (currentGame.roundData.teamB.interception) {
+        if (currentGame.roundData.B.interception) {
           html += `<div class="result-row ${teamBInterceptedA ? 'incorrect' : 'correct'}">
-            Team B Interception: ${currentGame.roundData.teamB.interception.join(' ')} ${teamBInterceptedA ? '✓ Success!' : '✗ Failed'}
+            Team B Interception: ${currentGame.roundData.B.interception.join(' ')} ${teamBInterceptedA ? '✓ Success!' : '✗ Failed'}
           </div>`;
         }
         
         // Team B results
-        const teamBData = currentGame.roundData.teamB;
+        const teamBData = currentGame.roundData.B;
         const teamBCorrect = JSON.stringify(teamBData.guess) === JSON.stringify(teamBData.code);
-        const teamAInterceptedB = JSON.stringify(currentGame.roundData.teamA.interception) === JSON.stringify(teamBData.code);
+        const teamAInterceptedB = JSON.stringify(currentGame.roundData.A.interception) === JSON.stringify(teamBData.code);
         
         html += `<h3 style="margin-top: 20px;">Team B (Orange)</h3>`;
         html += `<div class="result-row">Code: ${teamBData.code.join(' ')}</div>`;
         html += `<div class="result-row ${teamBCorrect ? 'correct' : 'incorrect'}">
           Guess: ${teamBData.guess.join(' ')} ${teamBCorrect ? '✓ Correct' : '✗ Miscommunication!'}
         </div>`;
-        if (currentGame.roundData.teamA.interception) {
+        if (currentGame.roundData.A.interception) {
           html += `<div class="result-row ${teamAInterceptedB ? 'incorrect' : 'correct'}">
-            Team A Interception: ${currentGame.roundData.teamA.interception.join(' ')} ${teamAInterceptedB ? '✓ Success!' : '✗ Failed'}
+            Team A Interception: ${currentGame.roundData.A.interception.join(' ')} ${teamAInterceptedB ? '✓ Success!' : '✗ Failed'}
           </div>`;
         }
         
@@ -812,12 +812,11 @@
         return;
       }
 
-      const myTeamKey = `team${myTeam}`;
-      currentGame.roundData[myTeamKey].code = code;
-      currentGame.roundData[myTeamKey].clues = clues;
+      currentGame.roundData[myTeam].code = code;
+      currentGame.roundData[myTeam].clues = clues;
 
       // Check if both teams submitted clues
-      if (currentGame.roundData.teamA.clues && currentGame.roundData.teamB.clues) {
+      if (currentGame.roundData.A.clues && currentGame.roundData.B.clues) {
         currentGame.phase = 'guessing';
       }
 
@@ -840,8 +839,7 @@
         return;
       }
 
-      const myTeamKey = `team${myTeam}`;
-      currentGame.roundData[myTeamKey].guess = guess;
+      currentGame.roundData[myTeam].guess = guess;
 
       checkPhaseComplete();
 
@@ -864,8 +862,7 @@
         return;
       }
 
-      const myTeamKey = `team${myTeam}`;
-      currentGame.roundData[myTeamKey].interception = interception;
+      currentGame.roundData[myTeam].interception = interception;
 
       checkPhaseComplete();
 
@@ -877,8 +874,7 @@
     }
 
     async function skipInterception() {
-      const myTeamKey = `team${myTeam}`;
-      currentGame.roundData[myTeamKey].interception = [0, 0, 0]; // Dummy value
+      currentGame.roundData[myTeam].interception = [0, 0, 0]; // Dummy value
 
       checkPhaseComplete();
 
@@ -891,14 +887,14 @@
 
     function checkPhaseComplete() {
       // Check if both teams guessed and attempted interception
-      if (currentGame.roundData.teamA.guess && currentGame.roundData.teamB.guess &&
-          currentGame.roundData.teamA.interception && currentGame.roundData.teamB.interception) {
+      if (currentGame.roundData.A.guess && currentGame.roundData.B.guess &&
+          currentGame.roundData.A.interception && currentGame.roundData.B.interception) {
         
         // Calculate results
-        const teamACorrect = JSON.stringify(currentGame.roundData.teamA.guess) === JSON.stringify(currentGame.roundData.teamA.code);
-        const teamBCorrect = JSON.stringify(currentGame.roundData.teamB.guess) === JSON.stringify(currentGame.roundData.teamB.code);
-        const teamAIntercepted = JSON.stringify(currentGame.roundData.teamA.interception) === JSON.stringify(currentGame.roundData.teamB.code);
-        const teamBIntercepted = JSON.stringify(currentGame.roundData.teamB.interception) === JSON.stringify(currentGame.roundData.teamA.code);
+        const teamACorrect = JSON.stringify(currentGame.roundData.A.guess) === JSON.stringify(currentGame.roundData.A.code);
+        const teamBCorrect = JSON.stringify(currentGame.roundData.B.guess) === JSON.stringify(currentGame.roundData.B.code);
+        const teamAIntercepted = JSON.stringify(currentGame.roundData.A.interception) === JSON.stringify(currentGame.roundData.B.code);
+        const teamBIntercepted = JSON.stringify(currentGame.roundData.B.interception) === JSON.stringify(currentGame.roundData.A.code);
 
         // Update scores
         if (!teamACorrect) currentGame.teamA.score.miscommunications++;
@@ -924,8 +920,8 @@
         // Save round to history
         currentGame.rounds.push({
           round: currentGame.currentRound,
-          teamA: { ...currentGame.roundData.teamA },
-          teamB: { ...currentGame.roundData.teamB }
+          teamA: { ...currentGame.roundData.A },
+          teamB: { ...currentGame.roundData.B }
         });
 
         currentGame.phase = 'results';
@@ -936,8 +932,8 @@
       currentGame.currentRound++;
       currentGame.phase = 'clues';
       currentGame.roundData = {
-        teamA: { code: null, clues: null, guess: null, interception: null },
-        teamB: { code: null, clues: null, guess: null, interception: null }
+        A: { code: null, clues: null, guess: null, interception: null },
+        B: { code: null, clues: null, guess: null, interception: null }
       };
 
       try {
