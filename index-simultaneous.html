@@ -710,7 +710,7 @@
 
   <script>
     // Game Version
-    const GAME_VERSION = "v3.0.3";
+    const GAME_VERSION = "v3.0.4";
 
     // Firebase Config
     const firebaseConfig = {
@@ -1116,6 +1116,17 @@
       const opponentTeamKey = opponentTeam;
       const myTeamRoundData = currentGame.roundData?.[myTeamKey] || {};
       const opponentRoundData = currentGame.roundData?.[opponentTeamKey] || {};
+      
+      // Migrate old data structure if needed
+      if (myTeamRoundData.clueGiverClaimed !== undefined && myTeamRoundData.clueGiverPlayerId === undefined) {
+        console.warn('Migrating old data structure...');
+        myTeamRoundData.clueGiverPlayerId = myTeamRoundData.clueGiverClaimed ? myPlayerId : null;
+        delete myTeamRoundData.clueGiverClaimed;
+      }
+      if (opponentRoundData.clueGiverClaimed !== undefined && opponentRoundData.clueGiverPlayerId === undefined) {
+        opponentRoundData.clueGiverPlayerId = null;
+        delete opponentRoundData.clueGiverClaimed;
+      }
 
       let html = '<div class="card">';
 
@@ -1349,10 +1360,18 @@
     }
 
     async function claimClueGiverRole() {
-      // Safety check
-      if (!currentGame.roundData || !currentGame.roundData[myTeam]) {
-        alert('Error: Game data is corrupt. Please refresh.');
-        return;
+      // Safety check and initialize if missing
+      if (!currentGame.roundData) {
+        console.warn('roundData missing, initializing...');
+        currentGame.roundData = {
+          A: { code: null, clues: null, guess: null, interception: null, clueGiverPlayerId: null },
+          B: { code: null, clues: null, guess: null, interception: null, clueGiverPlayerId: null }
+        };
+      }
+      
+      if (!currentGame.roundData[myTeam]) {
+        console.warn('Team roundData missing, initializing...');
+        currentGame.roundData[myTeam] = { code: null, clues: null, guess: null, interception: null, clueGiverPlayerId: null };
       }
 
       // Check if already claimed by someone
