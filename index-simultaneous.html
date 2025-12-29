@@ -409,7 +409,7 @@
 
   <script>
     // Game Version
-    const GAME_VERSION = "v2.0.0";
+    const GAME_VERSION = "v2.1.0";
 
     // Firebase Config
     const firebaseConfig = {
@@ -468,6 +468,52 @@
       if (statusEl) {
         statusEl.innerHTML = '<span class="status-indicator status-disconnected"></span>Connecting... <span style="margin-left: 15px; color: #718096;">| ' + GAME_VERSION + '</span>';
       }
+      
+      // Check if player was already in a game (page refresh)
+      const savedPlayerId = sessionStorage.getItem('decrypto_playerId');
+      if (savedPlayerId) {
+        myPlayerId = savedPlayerId;
+        const savedGameCode = sessionStorage.getItem(`decrypto_${myPlayerId}_gameCode`);
+        const savedTeam = sessionStorage.getItem(`decrypto_${myPlayerId}_team`);
+        const savedRole = sessionStorage.getItem(`decrypto_${myPlayerId}_role`);
+        
+        if (savedGameCode && savedTeam && savedRole) {
+          console.log('Restoring session:', { 
+            playerId: myPlayerId, 
+            gameCode: savedGameCode, 
+            team: savedTeam, 
+            role: savedRole 
+          });
+          
+          // Restore player state
+          gameCode = savedGameCode;
+          myTeam = savedTeam;
+          myRole = savedRole;
+          
+          // Auto-rejoin the game when Firebase connects
+          setTimeout(() => {
+            if (isFirebaseConfigured && gameCode) {
+              gameRef = db.ref(`games/${gameCode}`);
+              gameRef.once('value').then(snapshot => {
+                if (snapshot.exists()) {
+                  currentGame = snapshot.val();
+                  
+                  gameRef.on('value', (snapshot) => {
+                    if (snapshot.exists()) {
+                      currentGame = snapshot.val();
+                      renderGame();
+                    }
+                  });
+                  
+                  document.getElementById('setupScreen').style.display = 'none';
+                  document.getElementById('gameScreen').style.display = 'block';
+                  renderGame();
+                }
+              });
+            }
+          }, 1000); // Wait for Firebase to connect
+        }
+      }
     });
 
     // Game state
@@ -476,6 +522,20 @@
     let myRole = null;
     let gameCode = null;
     let gameRef = null;
+    let myPlayerId = null; // Unique ID for this player/tab
+
+    function generatePlayerId() {
+      return 'player_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+    }
+
+    function getOrCreatePlayerId() {
+      let playerId = sessionStorage.getItem('decrypto_playerId');
+      if (!playerId) {
+        playerId = generatePlayerId();
+        sessionStorage.setItem('decrypto_playerId', playerId);
+      }
+      return playerId;
+    }
 
     const WORD_BANK = [
       "PIANO", "THUNDER", "DIAMOND", "CASTLE", "ROBOT", "OCEAN", "ROCKET", "DRAGON",
@@ -606,9 +666,20 @@
       }
 
       try {
+        // Get or create unique player ID
+        myPlayerId = getOrCreatePlayerId();
+        
         gameCode = code;
         myTeam = team;
         myRole = role;
+        
+        console.log('Joining game as:', { playerId: myPlayerId, team: myTeam, role: myRole });
+        
+        // Store player identity in sessionStorage (per browser tab)
+        sessionStorage.setItem(`decrypto_${myPlayerId}_gameCode`, gameCode);
+        sessionStorage.setItem(`decrypto_${myPlayerId}_team`, myTeam);
+        sessionStorage.setItem(`decrypto_${myPlayerId}_role`, myRole);
+        
         gameRef = db.ref(`games/${gameCode}`);
 
         const snapshot = await gameRef.once('value');
@@ -639,6 +710,15 @@
     function leaveGame() {
       if (confirm('Are you sure you want to leave?')) {
         if (gameRef) gameRef.off();
+        
+        // Clear session storage for this player
+        if (myPlayerId) {
+          sessionStorage.removeItem(`decrypto_${myPlayerId}_gameCode`);
+          sessionStorage.removeItem(`decrypto_${myPlayerId}_team`);
+          sessionStorage.removeItem(`decrypto_${myPlayerId}_role`);
+          sessionStorage.removeItem('decrypto_playerId');
+        }
+        
         location.reload();
       }
     }
@@ -648,7 +728,7 @@
 
       document.getElementById('gameCodeDisplay').textContent = gameCode;
       document.getElementById('playerInfo').textContent = 
-        `You are: Team ${myTeam} - ${myRole === 'cluegiver' ? 'Clue-Giver' : 'Guesser'} | Round ${currentGame.currentRound}`;
+        `You are: Team ${myTeam} - ${myRole === 'cluegiver' ? 'Clue-Giver' : 'Guesser'} | Round ${currentGame.currentRound} | ID: ${myPlayerId?.substring(0, 12)}...`;
 
       document.getElementById('teamAMiscomm').textContent = currentGame.teamA?.score?.miscommunications || 0;
       document.getElementById('teamBMiscomm').textContent = currentGame.teamB?.score?.miscommunications || 0;

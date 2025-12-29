@@ -1,6 +1,45 @@
 # Decrypto Game - Version History
 
-## v2.0.0 (Current) - Simultaneous Play Edition
+## v2.1.0 (Current) - Unique Player Identity System
+**Released:** December 28, 2024
+
+### New Features
+- ✅ **Unique Player IDs:** Each browser tab gets its own player identity
+- ✅ **Multi-tab support:** Open multiple tabs in same browser, each with different role
+- ✅ **Cross-device ready:** Works perfectly across different devices and networks
+- ✅ **Session persistence:** Player identity persists across page refreshes
+- ✅ **Player ID display:** See your unique ID in the game info (for debugging)
+
+### Technical Changes
+- Generated unique player IDs: `player_timestamp_randomstring`
+- Player identity stored as: `decrypto_{playerId}_gameCode/team/role`
+- Auto-rejoin after page refresh using stored player ID
+- Each tab/window maintains independent identity
+
+### How It Works
+- **Firebase (Cloud):** Shared game state for all players
+- **sessionStorage (Local):** Individual player identity per tab
+- Perfect for remote multiplayer across different networks!
+
+---
+
+## v2.0.1 - Session Identity Fix
+**Released:** December 28, 2024
+
+### Bug Fixes
+- ✅ **Fixed:** Multiple browsers on same computer now maintain separate identities
+- ✅ **Fixed:** Each browser tab remembers its team/role selection independently
+- ✅ Uses sessionStorage to keep player identity per browser session
+- ✅ Player identity persists across page refreshes
+
+### Technical Changes
+- Player identity (team/role) stored in browser sessionStorage instead of Firebase
+- Session cleared when leaving game
+- Identity restored on page refresh
+
+---
+
+## v2.0.0 - Simultaneous Play Edition
 **Released:** December 28, 2024
 
 ### Major Features
