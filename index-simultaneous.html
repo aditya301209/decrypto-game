@@ -710,7 +710,7 @@
 
   <script>
     // Game Version
-    const GAME_VERSION = "v3.0.2";
+    const GAME_VERSION = "v3.0.3";
 
     // Firebase Config
     const firebaseConfig = {
@@ -925,8 +925,8 @@
         usedCodes: [], // Track codes already used
         phase: 'clues', // clues, guessing, results
         roundData: {
-          A: { code: null, clues: null, guess: null, interception: null, clueGiverClaimed: false },
-          B: { code: null, clues: null, guess: null, interception: null, clueGiverClaimed: false }
+          A: { code: null, clues: null, guess: null, interception: null, clueGiverPlayerId: null },
+          B: { code: null, clues: null, guess: null, interception: null, clueGiverPlayerId: null }
         },
         gameOver: false,
         winner: null
@@ -1122,12 +1122,14 @@
       if (currentGame.gameOver) {
         html += '<p style="text-align: center; font-size: 1.2em;">Game is over!</p>';
       } else if (phase === 'clues') {
-        // Clue phase - everyone sees this, can claim or wait
-        const isClaimed = myTeamRoundData.clueGiverClaimed;
+        // Clue phase - check if role is claimed and by whom
+        const clueGiverPlayerId = myTeamRoundData.clueGiverPlayerId;
+        const iAmClueGiver = clueGiverPlayerId === myPlayerId;
+        const someoneClaimedRole = !!clueGiverPlayerId;
         
         if (!myTeamRoundData.clues) {
-          if (!isClaimed) {
-            // Show claim button - anyone on the team can claim
+          if (!someoneClaimedRole) {
+            // Nobody claimed yet - show claim button
             html += `
               <h2>Clue-Giver Role Available</h2>
               <div class="alert alert-info">
@@ -1141,8 +1143,8 @@
                 Waiting for someone on your team to claim the role...
               </p>
             `;
-          } else {
-            // Role claimed, show clue input
+          } else if (iAmClueGiver) {
+            // I claimed the role - show clue input
             const code = myTeamRoundData.code || generateUniqueCode();
             html += `
               <h2>Give Your Clues</h2>
@@ -1158,6 +1160,18 @@
                 </div>
               `).join('')}
               <button class="btn btn-large" onclick="submitClues([${code}])">Submit Clues</button>
+            `;
+          } else {
+            // Someone else claimed - I'm a guesser, wait for clues
+            html += `
+              <h2>Your Clue-Giver is Working...</h2>
+              <div class="alert alert-info">
+                <strong>You're a guesser this round!</strong><br>
+                A teammate is giving clues. Get ready to guess when clues are submitted.
+              </div>
+              <p style="margin-top: 15px; color: #718096; text-align: center;">
+                Waiting for your clue-giver to submit clues...
+              </p>
             `;
           }
         } else {
@@ -1307,14 +1321,14 @@
       if (!currentGame.roundData) {
         console.warn('roundData was undefined, reinitializing...');
         currentGame.roundData = {
-          A: { code: null, clues: null, guess: null, interception: null, clueGiverClaimed: false },
-          B: { code: null, clues: null, guess: null, interception: null, clueGiverClaimed: false }
+          A: { code: null, clues: null, guess: null, interception: null, clueGiverPlayerId: null },
+          B: { code: null, clues: null, guess: null, interception: null, clueGiverPlayerId: null }
         };
       }
 
       // Ensure team's roundData exists
       if (!currentGame.roundData[myTeam]) {
-        currentGame.roundData[myTeam] = { code: null, clues: null, guess: null, interception: null, clueGiverClaimed: false };
+        currentGame.roundData[myTeam] = { code: null, clues: null, guess: null, interception: null, clueGiverPlayerId: null };
       }
 
       currentGame.roundData[myTeam].code = code;
@@ -1342,17 +1356,17 @@
       }
 
       // Check if already claimed by someone
-      if (currentGame.roundData[myTeam].clueGiverClaimed) {
+      if (currentGame.roundData[myTeam].clueGiverPlayerId) {
         alert('Someone else already claimed the clue-giver role for this round!');
         return;
       }
 
-      // Claim the role
-      currentGame.roundData[myTeam].clueGiverClaimed = true;
+      // Claim the role by storing this player's ID
+      currentGame.roundData[myTeam].clueGiverPlayerId = myPlayerId;
 
       try {
         await gameRef.set(currentGame);
-        console.log('Clue-giver role claimed');
+        console.log('Clue-giver role claimed by player:', myPlayerId);
         renderGame(); // Immediately show the clue input form
       } catch (error) {
         console.error('Error claiming role:', error);
@@ -1616,8 +1630,8 @@
       currentGame.currentRound++;
       currentGame.phase = 'clues';
       currentGame.roundData = {
-        A: { code: null, clues: null, guess: null, interception: null, clueGiverClaimed: false },
-        B: { code: null, clues: null, guess: null, interception: null, clueGiverClaimed: false }
+        A: { code: null, clues: null, guess: null, interception: null, clueGiverPlayerId: null },
+        B: { code: null, clues: null, guess: null, interception: null, clueGiverPlayerId: null }
       };
 
       try {
