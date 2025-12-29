@@ -408,6 +408,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
   <script>
+    // Game Version
+    const GAME_VERSION = "v2.0.0";
+
     // Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyBQfDW3cv268JlQRL7UeFhphR76hAStmS0",
@@ -426,10 +429,12 @@
 
     function updateConnectionStatus(connected) {
       const statusEl = document.getElementById('connectionStatus');
+      const versionText = `<span style="margin-left: 15px; color: #718096;">| ${GAME_VERSION}</span>`;
+      
       if (connected) {
-        statusEl.innerHTML = '<span class="status-indicator status-connected"></span>Connected';
+        statusEl.innerHTML = '<span class="status-indicator status-connected"></span>Connected' + versionText;
       } else {
-        statusEl.innerHTML = '<span class="status-indicator status-disconnected"></span>Not Connected';
+        statusEl.innerHTML = '<span class="status-indicator status-disconnected"></span>Not Connected' + versionText;
       }
     }
 
@@ -456,6 +461,14 @@
     }
 
     window.addEventListener('load', initializeFirebase);
+
+    // Show version immediately
+    document.addEventListener('DOMContentLoaded', () => {
+      const statusEl = document.getElementById('connectionStatus');
+      if (statusEl) {
+        statusEl.innerHTML = '<span class="status-indicator status-disconnected"></span>Connecting... <span style="margin-left: 15px; color: #718096;">| ' + GAME_VERSION + '</span>';
+      }
+    });
 
     // Game state
     let currentGame = null;
@@ -793,6 +806,15 @@
         // Guessing & interception phase
         html += '<h2>Guessing Phase</h2>';
         
+        // Show status of both teams
+        html += '<div class="alert alert-info" style="margin-bottom: 20px;">';
+        html += '<strong>Status:</strong><br>';
+        html += `Team A Guess: ${currentGame.roundData.A.guess ? '✓ Submitted' : '⏳ Pending'}<br>`;
+        html += `Team A Interception: ${currentGame.roundData.A.interception ? '✓ Submitted' : '⏳ Pending'}<br>`;
+        html += `Team B Guess: ${currentGame.roundData.B.guess ? '✓ Submitted' : '⏳ Pending'}<br>`;
+        html += `Team B Interception: ${currentGame.roundData.B.interception ? '✓ Submitted' : '⏳ Pending'}`;
+        html += '</div>';
+        
         // Guess your own team's code
         if (myTeamRoundData.clues && !myTeamRoundData.guess) {
           html += `
@@ -1005,15 +1027,34 @@
         return;
       }
 
+      console.log('=== CHECK PHASE COMPLETE ===');
+      console.log('Team A data:', {
+        hasGuess: !!currentGame.roundData.A.guess,
+        hasInterception: !!currentGame.roundData.A.interception
+      });
+      console.log('Team B data:', {
+        hasGuess: !!currentGame.roundData.B.guess,
+        hasInterception: !!currentGame.roundData.B.interception
+      });
+
       // Check if both teams guessed and attempted interception
       if (currentGame.roundData.A.guess && currentGame.roundData.B.guess &&
           currentGame.roundData.A.interception && currentGame.roundData.B.interception) {
+        
+        console.log('✓ All actions complete, calculating results...');
         
         // Calculate results
         const teamACorrect = JSON.stringify(currentGame.roundData.A.guess) === JSON.stringify(currentGame.roundData.A.code);
         const teamBCorrect = JSON.stringify(currentGame.roundData.B.guess) === JSON.stringify(currentGame.roundData.B.code);
         const teamAIntercepted = JSON.stringify(currentGame.roundData.A.interception) === JSON.stringify(currentGame.roundData.B.code);
         const teamBIntercepted = JSON.stringify(currentGame.roundData.B.interception) === JSON.stringify(currentGame.roundData.A.code);
+
+        console.log('Results calculated:', {
+          teamACorrect,
+          teamBCorrect,
+          teamAIntercepted,
+          teamBIntercepted
+        });
 
         // Update scores
         if (!teamACorrect) currentGame.teamA.score.miscommunications++;
@@ -1044,6 +1085,11 @@
         });
 
         currentGame.phase = 'results';
+        console.log('Phase changed to results');
+        console.log('=== PHASE COMPLETE ===');
+      } else {
+        console.log('❌ Not all actions complete yet');
+        console.log('=== PHASE CHECK END ===');
       }
     }
 
