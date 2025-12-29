@@ -710,7 +710,7 @@
 
   <script>
     // Game Version
-    const GAME_VERSION = "v3.0.6";
+    const GAME_VERSION = "v3.1.0";
 
     // Firebase Config
     const firebaseConfig = {
@@ -761,7 +761,12 @@
       }
     }
 
-    window.addEventListener('load', initializeFirebase);
+    window.addEventListener('load', async () => {
+      // Load words first
+      await loadWords();
+      // Then initialize Firebase
+      initializeFirebase();
+    });
 
     // Show version immediately
     document.addEventListener('DOMContentLoaded', () => {
@@ -841,25 +846,52 @@
       return playerId;
     }
 
-    const WORD_BANK = [
-      // Original 64 words
-      "PIANO", "THUNDER", "DIAMOND", "CASTLE", "ROBOT", "OCEAN", "ROCKET", "DRAGON",
-      "MAGIC", "FOREST", "CLOCK", "MIRROR", "BOOK", "STAR", "MOON", "FIRE",
-      "WATER", "EARTH", "WIND", "MOUNTAIN", "RIVER", "BRIDGE", "TOWER", "CROWN",
-      "SWORD", "SHIELD", "ARROW", "GATE", "WALL", "PATH", "ROAD", "SHIP",
-      "COIN", "RING", "KEY", "LOCK", "DOOR", "WINDOW", "LIGHT", "SHADOW",
-      "CLOUD", "RAIN", "SNOW", "SUN", "NIGHT", "DAY", "TIME", "SPACE",
-      "HEART", "MIND", "SOUL", "DREAM", "HOPE", "FEAR", "JOY", "PEACE",
-      "WAR", "KING", "QUEEN", "KNIGHT", "ANGEL", "DEMON", "GHOST", "SPIRIT",
-      // Additional 56 words (Total: 120)
-      "ANCHOR", "APPLE", "BALLOON", "BEACH", "BEAR", "BIRD", "BOTTLE", "BUTTER",
-      "CAMERA", "CANDLE", "CHAIR", "CHEESE", "CIRCLE", "COFFEE", "COMPASS", "CRYSTAL",
-      "DANCE", "DESERT", "EAGLE", "ENGINE", "FEATHER", "FLAME", "FLOWER", "FOUNTAIN",
-      "GALAXY", "GARDEN", "GIANT", "GOLD", "GUITAR", "HAMMER", "HONEY", "HORSE",
-      "ICE", "ISLAND", "JEWEL", "JUNGLE", "LADDER", "LAMP", "LEAF", "LIGHTNING",
-      "MARBLE", "MASK", "METAL", "MUSIC", "NEEDLE", "PAINT", "PAPER", "PEARL",
-      "PHOENIX", "PLANET", "PYRAMID", "RAINBOW", "RUBY", "SILVER", "SMOKE", "SNAKE"
-    ];
+    // Word bank - loaded from external file
+    let WORD_BANK = [];
+    let wordsLoaded = false;
+
+    // Load words from external file
+    async function loadWords() {
+      try {
+        const response = await fetch('words.txt');
+        const text = await response.text();
+        // Split by newlines, trim whitespace, filter empty lines, convert to uppercase, and ensure uniqueness
+        const words = text.split('\n')
+          .map(word => word.trim().toUpperCase())
+          .filter(word => word.length > 0);
+        
+        // Remove duplicates using Set
+        WORD_BANK = [...new Set(words)];
+        
+        console.log(`Loaded ${WORD_BANK.length} unique words from words.txt`);
+        wordsLoaded = true;
+        return true;
+      } catch (error) {
+        console.error('Error loading words file:', error);
+        console.warn('Falling back to embedded word list');
+        
+        // Fallback to embedded list if file fails to load
+        WORD_BANK = [
+          "PIANO", "THUNDER", "DIAMOND", "CASTLE", "ROBOT", "OCEAN", "ROCKET", "DRAGON",
+          "MAGIC", "FOREST", "CLOCK", "MIRROR", "BOOK", "STAR", "MOON", "FIRE",
+          "WATER", "EARTH", "WIND", "MOUNTAIN", "RIVER", "BRIDGE", "TOWER", "CROWN",
+          "SWORD", "SHIELD", "ARROW", "GATE", "WALL", "PATH", "ROAD", "SHIP",
+          "COIN", "RING", "KEY", "LOCK", "DOOR", "WINDOW", "LIGHT", "SHADOW",
+          "CLOUD", "RAIN", "SNOW", "SUN", "NIGHT", "DAY", "TIME", "SPACE",
+          "HEART", "MIND", "SOUL", "DREAM", "HOPE", "FEAR", "JOY", "PEACE",
+          "WAR", "KING", "QUEEN", "KNIGHT", "ANGEL", "DEMON", "GHOST", "SPIRIT",
+          "ANCHOR", "APPLE", "BALLOON", "BEACH", "BEAR", "BIRD", "BOTTLE", "BUTTER",
+          "CAMERA", "CANDLE", "CHAIR", "CHEESE", "CIRCLE", "COFFEE", "COMPASS", "CRYSTAL",
+          "DANCE", "DESERT", "EAGLE", "ENGINE", "FEATHER", "FLAME", "FLOWER", "FOUNTAIN",
+          "GALAXY", "GARDEN", "GIANT", "GOLD", "GUITAR", "HAMMER", "HONEY", "HORSE",
+          "ICE", "ISLAND", "JEWEL", "JUNGLE", "LADDER", "LAMP", "LEAF", "LIGHTNING",
+          "MARBLE", "MASK", "METAL", "MUSIC", "NEEDLE", "PAINT", "PAPER", "PEARL",
+          "PHOENIX", "PLANET", "PYRAMID", "RAINBOW", "RUBY", "SILVER", "SMOKE", "SNAKE"
+        ];
+        wordsLoaded = true;
+        return false;
+      }
+    }
 
     function generateGameCode() {
       return Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -904,6 +936,11 @@
     async function createGame() {
       if (!isFirebaseConfigured) {
         alert('Firebase is not connected yet.');
+        return;
+      }
+
+      if (!wordsLoaded) {
+        alert('Words are still loading. Please wait a moment and try again.');
         return;
       }
 
