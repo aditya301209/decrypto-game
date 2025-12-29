@@ -179,6 +179,108 @@
       border-radius: 8px;
       margin-bottom: 10px;
       border-left: 4px solid #667eea;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .history-item:hover {
+      background: #edf2f7;
+      transform: translateX(5px);
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+      color: #667eea;
+    }
+
+    .history-details {
+      display: none;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 2px solid #e2e8f0;
+    }
+
+    .history-details.expanded {
+      display: block;
+    }
+
+    .expand-icon {
+      transition: transform 0.3s;
+      font-size: 1.2em;
+    }
+
+    .expand-icon.rotated {
+      transform: rotate(90deg);
+    }
+
+    .history-team-section {
+      margin: 15px 0;
+      padding: 15px;
+      border-radius: 8px;
+    }
+
+    .history-team-section.team-a-bg {
+      background: #ebf8ff;
+    }
+
+    .history-team-section.team-b-bg {
+      background: #fef5e7;
+    }
+
+    .clue-tracker {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .clue-tracker-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-top: 15px;
+    }
+
+    .clue-column {
+      background: #f7fafc;
+      padding: 15px;
+      border-radius: 8px;
+      border: 2px solid #e2e8f0;
+    }
+
+    .clue-column-header {
+      font-weight: bold;
+      font-size: 1.3em;
+      color: #667eea;
+      text-align: center;
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #667eea;
+    }
+
+    .clue-entry {
+      padding: 8px;
+      margin: 5px 0;
+      background: white;
+      border-radius: 4px;
+      font-size: 0.9em;
+      border-left: 3px solid #667eea;
+    }
+
+    .clue-entry.round-highlight {
+      background: #fff5cc;
+      font-weight: bold;
+      border-left-color: #f59e0b;
+    }
+
+    .clue-entry-round {
+      font-size: 0.75em;
+      color: #718096;
+      margin-right: 5px;
     }
 
     .round-header {
@@ -382,13 +484,13 @@
             <div class="score-value" id="teamAMiscomm">0</div>
             <div class="score-label">Team A Miscommunications</div>
           </div>
-          <div class="score-item team-b">
-            <div class="score-value" id="teamBMiscomm">0</div>
-            <div class="score-label">Team B Miscommunications</div>
-          </div>
           <div class="score-item team-a">
             <div class="score-value" id="teamAInterceptions">0</div>
             <div class="score-label">Team A Interceptions</div>
+          </div>
+          <div class="score-item team-b">
+            <div class="score-value" id="teamBMiscomm">0</div>
+            <div class="score-label">Team B Miscommunications</div>
           </div>
           <div class="score-item team-b">
             <div class="score-value" id="teamBInterceptions">0</div>
@@ -398,6 +500,7 @@
 
         <div id="myTeamSection"></div>
         <div id="actionSection"></div>
+        <div id="clueTrackerSection"></div>
         <div id="historySection"></div>
       </div>
     </div>
@@ -409,7 +512,7 @@
 
   <script>
     // Game Version
-    const GAME_VERSION = "v2.1.3";
+    const GAME_VERSION = "v2.3.0";
 
     // Firebase Config
     const firebaseConfig = {
@@ -750,6 +853,11 @@
       renderPhaseIndicator();
       renderMyTeamSection();
       renderActionSection();
+      
+      // Render clue tracker
+      const clueTrackerHtml = renderClueTracker();
+      document.getElementById('clueTrackerSection').innerHTML = clueTrackerHtml;
+      
       renderHistory();
     }
 
@@ -1206,18 +1314,31 @@
         if (teamAIntercepted) currentGame.teamA.score.interceptions++;
 
         // Check win conditions
-        if (currentGame.teamA.score.miscommunications >= 2) {
+        const teamALost = currentGame.teamA.score.miscommunications >= 2;
+        const teamBLost = currentGame.teamB.score.miscommunications >= 2;
+        const teamAWonByInterception = currentGame.teamA.score.interceptions >= 2;
+        const teamBWonByInterception = currentGame.teamB.score.interceptions >= 2;
+
+        if (teamALost && teamBLost) {
+          // Both teams hit 2 miscommunications in same round - tie game!
           currentGame.gameOver = true;
-          currentGame.winner = 'Team B (Orange)';
-        } else if (currentGame.teamB.score.miscommunications >= 2) {
+          currentGame.winner = 'TIE - Both teams reached 2 miscommunications!';
+        } else if (teamAWonByInterception && teamBWonByInterception) {
+          // Both teams got 2 interceptions in same round - tie game!
           currentGame.gameOver = true;
-          currentGame.winner = 'Team A (Blue)';
-        } else if (currentGame.teamA.score.interceptions >= 2) {
+          currentGame.winner = 'TIE - Both teams got 2 successful interceptions!';
+        } else if (teamALost) {
           currentGame.gameOver = true;
-          currentGame.winner = 'Team A (Blue)';
-        } else if (currentGame.teamB.score.interceptions >= 2) {
+          currentGame.winner = 'Team B (Orange) - Team A had 2 miscommunications';
+        } else if (teamBLost) {
           currentGame.gameOver = true;
-          currentGame.winner = 'Team B (Orange)';
+          currentGame.winner = 'Team A (Blue) - Team B had 2 miscommunications';
+        } else if (teamAWonByInterception) {
+          currentGame.gameOver = true;
+          currentGame.winner = 'Team A (Blue) - 2 successful interceptions!';
+        } else if (teamBWonByInterception) {
+          currentGame.gameOver = true;
+          currentGame.winner = 'Team B (Orange) - 2 successful interceptions!';
         }
 
         // Save round to history
@@ -1246,16 +1367,28 @@
       if (currentGame.currentRound >= currentGame.maxRounds) {
         currentGame.gameOver = true;
         
-        // Determine winner by who has fewer miscommunications (or more interceptions as tiebreaker)
-        const teamAScore = currentGame.teamA.score.miscommunications - currentGame.teamA.score.interceptions;
-        const teamBScore = currentGame.teamB.score.miscommunications - currentGame.teamB.score.interceptions;
+        const teamAMiscomm = currentGame.teamA.score.miscommunications;
+        const teamBMiscomm = currentGame.teamB.score.miscommunications;
+        const teamAInterceptions = currentGame.teamA.score.interceptions;
+        const teamBInterceptions = currentGame.teamB.score.interceptions;
         
-        if (teamAScore < teamBScore) {
-          currentGame.winner = 'Team A (Blue) - Fewer Mistakes!';
-        } else if (teamBScore < teamAScore) {
-          currentGame.winner = 'Team B (Orange) - Fewer Mistakes!';
+        // Determine winner: Fewest miscommunications wins
+        // If tied on miscommunications, most interceptions wins
+        // If still tied, it's a tie game
+        
+        if (teamAMiscomm < teamBMiscomm) {
+          currentGame.winner = `Team A (Blue) Wins! (${teamAMiscomm} miscommunications vs ${teamBMiscomm})`;
+        } else if (teamBMiscomm < teamAMiscomm) {
+          currentGame.winner = `Team B (Orange) Wins! (${teamBMiscomm} miscommunications vs ${teamAMiscomm})`;
         } else {
-          currentGame.winner = 'Tie! Both teams played equally well!';
+          // Tied on miscommunications, check interceptions
+          if (teamAInterceptions > teamBInterceptions) {
+            currentGame.winner = `Team A (Blue) Wins! (Tied ${teamAMiscomm}-${teamBMiscomm}, but ${teamAInterceptions} interceptions vs ${teamBInterceptions})`;
+          } else if (teamBInterceptions > teamAInterceptions) {
+            currentGame.winner = `Team B (Orange) Wins! (Tied ${teamAMiscomm}-${teamBMiscomm}, but ${teamBInterceptions} interceptions vs ${teamAInterceptions})`;
+          } else {
+            currentGame.winner = `Perfect Tie! Both teams: ${teamAMiscomm} miscommunications, ${teamAInterceptions} interceptions`;
+          }
         }
         
         try {
@@ -1288,12 +1421,171 @@
 
       let html = '<div class="card"><h2>Game History</h2>';
 
-      currentGame.rounds.forEach(round => {
-        html += `<div class="history-item"><strong>Round ${round.round}</strong></div>`;
+      currentGame.rounds.forEach((round, index) => {
+        const roundNum = round.round || (index + 1);
+        const teamAData = round.teamA;
+        const teamBData = round.teamB;
+        
+        if (!teamAData || !teamBData) return;
+        
+        // Calculate results
+        const teamACorrect = JSON.stringify(teamAData.guess) === JSON.stringify(teamAData.code);
+        const teamBCorrect = JSON.stringify(teamBData.guess) === JSON.stringify(teamBData.code);
+        const teamAIntercepted = JSON.stringify(teamAData.interception) === JSON.stringify(teamBData.code);
+        const teamBIntercepted = JSON.stringify(teamBData.interception) === JSON.stringify(teamAData.code);
+        
+        html += `
+          <div class="history-item" onclick="toggleHistoryItem(${index})">
+            <div class="history-header">
+              <span>Round ${roundNum}</span>
+              <span class="expand-icon" id="icon-${index}">▶</span>
+            </div>
+            <div class="history-details" id="details-${index}">
+              
+              <div class="history-team-section team-a-bg">
+                <h3 style="color: #3182ce; margin-bottom: 10px;">Team A (Blue)</h3>
+                <div><strong>Secret Code:</strong> <span style="font-size: 1.3em; color: #3182ce;">${teamAData.code.join(' ')}</span></div>
+                <div style="margin-top: 8px;"><strong>Clues:</strong> ${teamAData.clues.join(' | ')}</div>
+                <div style="margin-top: 8px;">
+                  <strong>Team A Guess:</strong> ${teamAData.guess.join(' ')} 
+                  <span style="color: ${teamACorrect ? '#38a169' : '#e53e3e'}; font-weight: bold;">
+                    ${teamACorrect ? '✓ CORRECT' : '✗ Miscommunication'}
+                  </span>
+                </div>
+                ${teamBData.interception && teamBData.interception.join('') !== '000' ? `
+                  <div style="margin-top: 8px;">
+                    <strong>Team B Interception:</strong> ${teamBData.interception.join(' ')} 
+                    <span style="color: ${teamBIntercepted ? '#e53e3e' : '#38a169'}; font-weight: bold;">
+                      ${teamBIntercepted ? '✓ Success!' : '✗ Failed'}
+                    </span>
+                  </div>
+                ` : '<div style="margin-top: 8px;"><strong>Team B Interception:</strong> Skipped</div>'}
+              </div>
+
+              <div class="history-team-section team-b-bg">
+                <h3 style="color: #dd6b20; margin-bottom: 10px;">Team B (Orange)</h3>
+                <div><strong>Secret Code:</strong> <span style="font-size: 1.3em; color: #dd6b20;">${teamBData.code.join(' ')}</span></div>
+                <div style="margin-top: 8px;"><strong>Clues:</strong> ${teamBData.clues.join(' | ')}</div>
+                <div style="margin-top: 8px;">
+                  <strong>Team B Guess:</strong> ${teamBData.guess.join(' ')} 
+                  <span style="color: ${teamBCorrect ? '#38a169' : '#e53e3e'}; font-weight: bold;">
+                    ${teamBCorrect ? '✓ CORRECT' : '✗ Miscommunication'}
+                  </span>
+                </div>
+                ${teamAData.interception && teamAData.interception.join('') !== '000' ? `
+                  <div style="margin-top: 8px;">
+                    <strong>Team A Interception:</strong> ${teamAData.interception.join(' ')} 
+                    <span style="color: ${teamAIntercepted ? '#e53e3e' : '#38a169'}; font-weight: bold;">
+                      ${teamAIntercepted ? '✓ Success!' : '✗ Failed'}
+                    </span>
+                  </div>
+                ` : '<div style="margin-top: 8px;"><strong>Team A Interception:</strong> Skipped</div>'}
+              </div>
+
+            </div>
+          </div>
+        `;
       });
 
       html += '</div>';
       document.getElementById('historySection').innerHTML = html;
+    }
+
+    function toggleHistoryItem(index) {
+      const details = document.getElementById(`details-${index}`);
+      const icon = document.getElementById(`icon-${index}`);
+      
+      if (details.classList.contains('expanded')) {
+        details.classList.remove('expanded');
+        icon.classList.remove('rotated');
+      } else {
+        details.classList.add('expanded');
+        icon.classList.add('rotated');
+      }
+    }
+
+    function renderClueTracker() {
+      const opponentTeam = myTeam === 'A' ? 'B' : 'A';
+      const opponentTeamName = opponentTeam === 'A' ? 'Team A (Blue)' : 'Team B (Orange)';
+      const teamClass = opponentTeam === 'A' ? 'team-a' : 'team-b';
+      
+      if (!currentGame?.rounds || currentGame.rounds.length === 0) {
+        return '';
+      }
+
+      // Organize clues by number (1-4) from all past rounds
+      const cluesByNumber = {
+        1: [],
+        2: [],
+        3: [],
+        4: []
+      };
+
+      // Go through completed rounds and collect opponent's clues
+      currentGame.rounds.forEach(round => {
+        const roundNum = round.round;
+        const opponentData = opponentTeam === 'A' ? round.teamA : round.teamB;
+        
+        if (opponentData && opponentData.code && opponentData.clues) {
+          // Map each clue to its corresponding number
+          opponentData.code.forEach((number, index) => {
+            cluesByNumber[number].push({
+              round: roundNum,
+              clue: opponentData.clues[index]
+            });
+          });
+        }
+      });
+
+      // Add current round's clues if they exist
+      const currentOpponentData = currentGame.roundData?.[opponentTeam];
+      if (currentOpponentData?.code && currentOpponentData?.clues && currentGame.phase !== 'clues') {
+        currentOpponentData.code.forEach((number, index) => {
+          cluesByNumber[number].push({
+            round: currentGame.currentRound,
+            clue: currentOpponentData.clues[index],
+            isCurrent: true
+          });
+        });
+      }
+
+      let html = `
+        <div class="card ${teamClass}">
+          <h2>📝 ${opponentTeamName} Clue Tracker</h2>
+          <p style="color: #718096; margin-bottom: 10px;">Track their clues by word number to help with interceptions!</p>
+          <div class="clue-tracker-grid">
+      `;
+
+      // Render columns for each number
+      for (let num = 1; num <= 4; num++) {
+        html += `
+          <div class="clue-column">
+            <div class="clue-column-header">Word #${num}</div>
+        `;
+        
+        if (cluesByNumber[num].length === 0) {
+          html += '<div style="text-align: center; color: #a0aec0; padding: 20px;">No clues yet</div>';
+        } else {
+          cluesByNumber[num].forEach(entry => {
+            const highlightClass = entry.isCurrent ? 'round-highlight' : '';
+            html += `
+              <div class="clue-entry ${highlightClass}">
+                <span class="clue-entry-round">R${entry.round}:</span>
+                ${entry.clue}
+              </div>
+            `;
+          });
+        }
+        
+        html += '</div>';
+      }
+
+      html += `
+          </div>
+        </div>
+      `;
+
+      return html;
     }
   </script>
 </body>
