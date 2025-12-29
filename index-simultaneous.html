@@ -710,7 +710,7 @@
 
   <script>
     // Game Version
-    const GAME_VERSION = "v3.1.0";
+    const GAME_VERSION = "v3.1.1";
 
     // Firebase Config
     const firebaseConfig = {
@@ -1843,9 +1843,9 @@
         }
       });
 
-      // Add current round's clues if they exist
+      // Add current round's clues ONLY if results have been revealed
       const currentOpponentData = currentGame.roundData?.[opponentTeam];
-      if (currentOpponentData?.code && currentOpponentData?.clues && currentGame.phase !== 'clues') {
+      if (currentOpponentData?.code && currentOpponentData?.clues && currentGame.phase === 'results') {
         currentOpponentData.code.forEach((number, index) => {
           cluesByNumber[number].push({
             round: currentGame.currentRound,
@@ -1859,8 +1859,18 @@
         <div class="card ${teamClass}">
           <h2>📝 ${opponentTeamName} Clue Tracker</h2>
           <p style="color: #718096; margin-bottom: 10px;">Track their clues by word number to help with interceptions!</p>
-          <div class="clue-tracker-grid">
       `;
+      
+      // Add note if current round is in progress
+      if (currentGame.phase === 'guessing') {
+        html += `
+          <div class="alert alert-warning" style="margin-bottom: 10px; font-size: 0.9em;">
+            <strong>Note:</strong> This round's clue mapping will be revealed after results!
+          </div>
+        `;
+      }
+      
+      html += `<div class="clue-tracker-grid">`;
 
       // Render columns for each number
       for (let num = 1; num <= 4; num++) {
