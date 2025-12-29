@@ -710,7 +710,7 @@
 
   <script>
     // Game Version
-    const GAME_VERSION = "v3.0.0";
+    const GAME_VERSION = "v3.0.1";
 
     // Firebase Config
     const firebaseConfig = {
@@ -1122,8 +1122,8 @@
 
       if (currentGame.gameOver) {
         html += '<p style="text-align: center; font-size: 1.2em;">Game is over!</p>';
-      } else if (phase === 'clues' && myRole === 'cluegiver') {
-        // Clue-giving phase - now with claiming system
+      } else if (phase === 'clues') {
+        // Clue phase - everyone sees this, can claim or wait
         const isClaimed = myTeamRoundData.clueGiverClaimed;
         
         if (!myTeamRoundData.clues) {
@@ -1187,62 +1187,8 @@
             <p style="text-align: center; color: #718096;">Team ${opponentTeam} hasn't submitted clues yet...</p>
           `;
         }
-      } else if (phase === 'clues' && myRole === 'guesser') {
-        // Guessers wait during clue-giving phase, but can see submitted clues
-        html += '<h2>Clue-Givers Are Working...</h2>';
-        
-        if (myTeamRoundData.clues) {
-          html += `
-            <div class="alert alert-success">
-              <strong>✓ Your clue-giver submitted clues!</strong><br>
-              ${myTeamRoundData.clues.map((c, i) => `Clue ${i+1}: ${c}`).join('<br>')}
-            </div>
-          `;
-        } else {
-          html += `
-            <div class="alert alert-warning">
-              Waiting for your clue-giver to submit clues...
-            </div>
-          `;
-        }
-
-        if (opponentRoundData.clues) {
-          html += `
-            <hr style="margin: 30px 0; border: 1px solid #e2e8f0;">
-            <h3>Team ${opponentTeam} Clues (Submitted)</h3>
-            <div class="alert alert-info">
-              Clue 1: ${opponentRoundData.clues[0]}<br>
-              Clue 2: ${opponentRoundData.clues[1]}<br>
-              Clue 3: ${opponentRoundData.clues[2]}
-            </div>
-          `;
-        } else {
-          html += `
-            <hr style="margin: 30px 0; border: 1px solid #e2e8f0;">
-            <p style="text-align: center; color: #718096;">Team ${opponentTeam} clue-giver hasn't submitted yet...</p>
-          `;
-        }
-      } else if (phase === 'clues' && myRole === 'cluegiver') {
-        // Clue-givers in waiting state
-        html += '<h2>Waiting...</h2>';
-        if (myTeamRoundData.clues) {
-          html += `<div class="alert alert-success">✓ Your clues submitted! Waiting for other clue-giver...</div>`;
-        } else {
-          html += `<div class="alert alert-warning">Something went wrong. Please refresh.</div>`;
-        }
-      } else if (phase === 'guessing' && myRole === 'cluegiver') {
-        // Clue-givers wait during guessing phase
-        html += '<h2>Guessers Are Working...</h2>';
-        html += '<div class="alert alert-info">';
-        html += '<strong>Status:</strong><br>';
-        html += `Team A Guess: ${currentGame.roundData.A.guess ? '✓ Submitted' : '⏳ Pending'}<br>`;
-        html += `Team A Interception: ${currentGame.roundData.A.interception ? '✓ Submitted' : '⏳ Pending'}<br>`;
-        html += `Team B Guess: ${currentGame.roundData.B.guess ? '✓ Submitted' : '⏳ Pending'}<br>`;
-        html += `Team B Interception: ${currentGame.roundData.B.interception ? '✓ Submitted' : '⏳ Pending'}`;
-        html += '</div>';
-        html += '<p style="margin-top: 15px; text-align: center; color: #718096;">Please wait while teams complete their guesses and interception attempts...</p>';
-      } else if (phase === 'guessing' && myRole === 'guesser') {
-        // Guessing & interception phase
+      } else if (phase === 'guessing') {
+        // Guessing & interception phase - everyone participates
         html += '<h2>Guessing Phase</h2>';
         
         // Show status of both teams
