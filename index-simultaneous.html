@@ -409,7 +409,7 @@
 
   <script>
     // Game Version
-    const GAME_VERSION = "v2.1.2";
+    const GAME_VERSION = "v2.1.3";
 
     // Firebase Config
     const firebaseConfig = {
@@ -1191,6 +1191,14 @@
           teamBIntercepted
         });
 
+        // Ensure score objects exist
+        if (!currentGame.teamA.score) {
+          currentGame.teamA.score = { miscommunications: 0, interceptions: 0 };
+        }
+        if (!currentGame.teamB.score) {
+          currentGame.teamB.score = { miscommunications: 0, interceptions: 0 };
+        }
+
         // Update scores
         if (!teamACorrect) currentGame.teamA.score.miscommunications++;
         if (!teamBCorrect) currentGame.teamB.score.miscommunications++;
@@ -1213,6 +1221,11 @@
         }
 
         // Save round to history
+        if (!currentGame.rounds) {
+          console.warn('rounds array was undefined, initializing...');
+          currentGame.rounds = [];
+        }
+        
         currentGame.rounds.push({
           round: currentGame.currentRound,
           teamA: { ...currentGame.roundData.A },
