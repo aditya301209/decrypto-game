@@ -409,7 +409,7 @@
 
   <script>
     // Game Version
-    const GAME_VERSION = "v2.1.0";
+    const GAME_VERSION = "v2.1.1";
 
     // Firebase Config
     const firebaseConfig = {
@@ -525,7 +525,10 @@
     let myPlayerId = null; // Unique ID for this player/tab
 
     function generatePlayerId() {
-      return 'player_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+      // Generate a short, unique ID: timestamp + random 6-char string
+      const timestamp = Date.now().toString(36); // Base36 is shorter
+      const random = Math.random().toString(36).substring(2, 8);
+      return `P${timestamp}${random}`;
     }
 
     function getOrCreatePlayerId() {
@@ -728,7 +731,7 @@
 
       document.getElementById('gameCodeDisplay').textContent = gameCode;
       document.getElementById('playerInfo').textContent = 
-        `You are: Team ${myTeam} - ${myRole === 'cluegiver' ? 'Clue-Giver' : 'Guesser'} | Round ${currentGame.currentRound} | ID: ${myPlayerId?.substring(0, 12)}...`;
+        `You are: Team ${myTeam} - ${myRole === 'cluegiver' ? 'Clue-Giver' : 'Guesser'} | Round ${currentGame.currentRound} | Player ID: ${myPlayerId || 'Unknown'}`;
 
       document.getElementById('teamAMiscomm').textContent = currentGame.teamA?.score?.miscommunications || 0;
       document.getElementById('teamBMiscomm').textContent = currentGame.teamB?.score?.miscommunications || 0;
@@ -935,8 +938,8 @@
           html += `<div class="alert alert-success">✓ Interception submitted!</div>`;
         }
       } else if (phase === 'results') {
-        // Results phase - anyone can advance
-        html += '<h2>Round Results</h2>';
+        // Results phase - EVERYONE can see this (both clue-givers and guessers)
+        html += '<h2>📊 Round ' + currentGame.currentRound + ' Results</h2>';
         html += '<div class="results-card">';
         
         // Team A results
@@ -944,15 +947,17 @@
         const teamACorrect = JSON.stringify(teamAData.guess) === JSON.stringify(teamAData.code);
         const teamBInterceptedA = JSON.stringify(currentGame.roundData.B.interception) === JSON.stringify(teamAData.code);
         
-        html += `<h3>Team A (Blue)</h3>`;
-        html += `<div class="result-row">Code: ${teamAData.code.join(' ')}</div>`;
+        html += `<h3 style="color: #3182ce;">Team A (Blue)</h3>`;
+        html += `<div class="result-row" style="background: #e6f2ff;"><strong>Secret Code:</strong> <span style="font-size: 1.5em; color: #3182ce;">${teamAData.code.join(' ')}</span></div>`;
         html += `<div class="result-row ${teamACorrect ? 'correct' : 'incorrect'}">
-          Guess: ${teamAData.guess.join(' ')} ${teamACorrect ? '✓ Correct' : '✗ Miscommunication!'}
+          <strong>Team A Guess:</strong> ${teamAData.guess.join(' ')} ${teamACorrect ? '✓ CORRECT' : '✗ WRONG = Miscommunication!'}
         </div>`;
-        if (currentGame.roundData.B.interception) {
+        if (currentGame.roundData.B.interception && currentGame.roundData.B.interception.join('') !== '000') {
           html += `<div class="result-row ${teamBInterceptedA ? 'incorrect' : 'correct'}">
-            Team B Interception: ${currentGame.roundData.B.interception.join(' ')} ${teamBInterceptedA ? '✓ Success!' : '✗ Failed'}
+            <strong>Team B Interception:</strong> ${currentGame.roundData.B.interception.join(' ')} ${teamBInterceptedA ? '✓ SUCCESS! (Interception point)' : '✗ Failed'}
           </div>`;
+        } else {
+          html += `<div class="result-row"><strong>Team B Interception:</strong> Skipped</div>`;
         }
         
         // Team B results
@@ -960,19 +965,23 @@
         const teamBCorrect = JSON.stringify(teamBData.guess) === JSON.stringify(teamBData.code);
         const teamAInterceptedB = JSON.stringify(currentGame.roundData.A.interception) === JSON.stringify(teamBData.code);
         
-        html += `<h3 style="margin-top: 20px;">Team B (Orange)</h3>`;
-        html += `<div class="result-row">Code: ${teamBData.code.join(' ')}</div>`;
+        html += `<h3 style="margin-top: 30px; color: #dd6b20;">Team B (Orange)</h3>`;
+        html += `<div class="result-row" style="background: #fef5e7;"><strong>Secret Code:</strong> <span style="font-size: 1.5em; color: #dd6b20;">${teamBData.code.join(' ')}</span></div>`;
         html += `<div class="result-row ${teamBCorrect ? 'correct' : 'incorrect'}">
-          Guess: ${teamBData.guess.join(' ')} ${teamBCorrect ? '✓ Correct' : '✗ Miscommunication!'}
+          <strong>Team B Guess:</strong> ${teamBData.guess.join(' ')} ${teamBCorrect ? '✓ CORRECT' : '✗ WRONG = Miscommunication!'}
         </div>`;
-        if (currentGame.roundData.A.interception) {
+        if (currentGame.roundData.A.interception && currentGame.roundData.A.interception.join('') !== '000') {
           html += `<div class="result-row ${teamAInterceptedB ? 'incorrect' : 'correct'}">
-            Team A Interception: ${currentGame.roundData.A.interception.join(' ')} ${teamAInterceptedB ? '✓ Success!' : '✗ Failed'}
+            <strong>Team A Interception:</strong> ${currentGame.roundData.A.interception.join(' ')} ${teamAInterceptedB ? '✓ SUCCESS! (Interception point)' : '✗ Failed'}
           </div>`;
+        } else {
+          html += `<div class="result-row"><strong>Team A Interception:</strong> Skipped</div>`;
         }
         
         html += '</div>';
-        html += '<button class="btn btn-large" onclick="nextRound()">Continue to Next Round</button>';
+        html += '<div style="text-align: center; margin-top: 30px;">';
+        html += '<button class="btn btn-large" onclick="nextRound()">Continue to Round ' + (currentGame.currentRound + 1) + ' →</button>';
+        html += '</div>';
       } else {
         html += '<p style="text-align: center;">Waiting for your turn...</p>';
       }
@@ -1043,6 +1052,16 @@
       }
 
       currentGame.roundData[myTeam].guess = guess;
+      
+      // Check if guess is correct and show immediate feedback
+      const code = currentGame.roundData[myTeam].code;
+      const correct = JSON.stringify(guess) === JSON.stringify(code);
+      
+      if (correct) {
+        alert('✓ Correct! Your guess matches the code: ' + code.join(' '));
+      } else {
+        alert('Your guess submitted: ' + guess.join(' ') + '\n(Results will be revealed at the end of the round)');
+      }
 
       checkPhaseComplete();
 
@@ -1072,6 +1091,17 @@
       }
 
       currentGame.roundData[myTeam].interception = interception;
+      
+      // Check if interception is correct and show immediate feedback
+      const opponentTeam = myTeam === 'A' ? 'B' : 'A';
+      const opponentCode = currentGame.roundData[opponentTeam].code;
+      const correct = JSON.stringify(interception) === JSON.stringify(opponentCode);
+      
+      if (correct) {
+        alert('🎯 Interception SUCCESS! You cracked their code: ' + opponentCode.join(' '));
+      } else {
+        alert('Interception submitted: ' + interception.join(' ') + '\n(Results will be revealed at the end of the round)');
+      }
 
       checkPhaseComplete();
 
