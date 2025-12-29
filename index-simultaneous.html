@@ -710,7 +710,7 @@
 
   <script>
     // Game Version
-    const GAME_VERSION = "v3.0.4";
+    const GAME_VERSION = "v3.0.5";
 
     // Firebase Config
     const firebaseConfig = {
@@ -1212,20 +1212,41 @@
           `;
         }
       } else if (phase === 'guessing') {
-        // Guessing & interception phase - everyone participates
-        html += '<h2>Guessing Phase</h2>';
+        // Check if I was the clue-giver this round
+        const clueGiverPlayerId = myTeamRoundData.clueGiverPlayerId;
+        const iAmClueGiver = clueGiverPlayerId === myPlayerId;
         
-        // Show status of both teams
-        html += '<div class="alert alert-info" style="margin-bottom: 20px;">';
-        html += '<strong>Status:</strong><br>';
-        html += `Team A Guess: ${currentGame.roundData.A.guess ? '✓ Submitted' : '⏳ Pending'}<br>`;
-        html += `Team A Interception: ${currentGame.roundData.A.interception ? '✓ Submitted' : '⏳ Pending'}<br>`;
-        html += `Team B Guess: ${currentGame.roundData.B.guess ? '✓ Submitted' : '⏳ Pending'}<br>`;
-        html += `Team B Interception: ${currentGame.roundData.B.interception ? '✓ Submitted' : '⏳ Pending'}`;
-        html += '</div>';
-        
-        // Guess your own team's code
-        if (myTeamRoundData.clues && !myTeamRoundData.guess) {
+        if (iAmClueGiver) {
+          // Clue-giver waits during guessing phase
+          html += '<h2>Guessers Are Working...</h2>';
+          html += '<div class="alert alert-success" style="margin-bottom: 20px;">';
+          html += '<strong>✓ You gave the clues this round!</strong><br>';
+          html += 'Now your teammates are guessing. Please wait for the results.';
+          html += '</div>';
+          
+          // Show status of both teams
+          html += '<div class="alert alert-info">';
+          html += '<strong>Status:</strong><br>';
+          html += `Team A Guess: ${currentGame.roundData.A.guess ? '✓ Submitted' : '⏳ Pending'}<br>`;
+          html += `Team A Interception: ${currentGame.roundData.A.interception ? '✓ Submitted' : '⏳ Pending'}<br>`;
+          html += `Team B Guess: ${currentGame.roundData.B.guess ? '✓ Submitted' : '⏳ Pending'}<br>`;
+          html += `Team B Interception: ${currentGame.roundData.B.interception ? '✓ Submitted' : '⏳ Pending'}`;
+          html += '</div>';
+        } else {
+          // Guessers participate in guessing & interception
+          html += '<h2>Guessing Phase</h2>';
+          
+          // Show status of both teams
+          html += '<div class="alert alert-info" style="margin-bottom: 20px;">';
+          html += '<strong>Status:</strong><br>';
+          html += `Team A Guess: ${currentGame.roundData.A.guess ? '✓ Submitted' : '⏳ Pending'}<br>`;
+          html += `Team A Interception: ${currentGame.roundData.A.interception ? '✓ Submitted' : '⏳ Pending'}<br>`;
+          html += `Team B Guess: ${currentGame.roundData.B.guess ? '✓ Submitted' : '⏳ Pending'}<br>`;
+          html += `Team B Interception: ${currentGame.roundData.B.interception ? '✓ Submitted' : '⏳ Pending'}`;
+          html += '</div>';
+          
+          // Guess your own team's code
+          if (myTeamRoundData.clues && !myTeamRoundData.guess) {
           html += `
             <div class="alert alert-info">
               <strong>Your Team's Clues:</strong><br>
@@ -1263,6 +1284,7 @@
         } else if (myTeamRoundData.interception) {
           html += `<div class="alert alert-success">✓ Interception submitted!</div>`;
         }
+        }  // End of else block for guessers
       } else if (phase === 'results') {
         // Results phase - EVERYONE can see this (both clue-givers and guessers)
         html += '<h2>📊 Round ' + currentGame.currentRound + ' Results</h2>';
