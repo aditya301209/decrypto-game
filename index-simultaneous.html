@@ -512,7 +512,7 @@
 
   <script>
     // Game Version
-    const GAME_VERSION = "v2.3.0";
+    const GAME_VERSION = "v2.3.1";
 
     // Firebase Config
     const firebaseConfig = {
@@ -1172,6 +1172,13 @@
         return;
       }
 
+      // Check for duplicate numbers
+      const uniqueNumbers = new Set(guess);
+      if (uniqueNumbers.size !== guess.length) {
+        alert('Error: You cannot use the same number twice!\nEach number (1-4) can only appear once in your guess.');
+        return;
+      }
+
       // Safety check
       if (!currentGame.roundData || !currentGame.roundData[myTeam]) {
         alert('Error: Game data is corrupt. Please refresh.');
@@ -1210,6 +1217,13 @@
 
       if (interception.some(g => !g || g < 1 || g > 4)) {
         alert('Please enter valid numbers (1-4)');
+        return;
+      }
+
+      // Check for duplicate numbers
+      const uniqueNumbers = new Set(interception);
+      if (uniqueNumbers.size !== interception.length) {
+        alert('Error: You cannot use the same number twice!\nEach number (1-4) can only appear once in your interception.');
         return;
       }
 
@@ -1327,18 +1341,18 @@
           // Both teams got 2 interceptions in same round - tie game!
           currentGame.gameOver = true;
           currentGame.winner = 'TIE - Both teams got 2 successful interceptions!';
-        } else if (teamALost) {
-          currentGame.gameOver = true;
-          currentGame.winner = 'Team B (Orange) - Team A had 2 miscommunications';
         } else if (teamBLost) {
           currentGame.gameOver = true;
-          currentGame.winner = 'Team A (Blue) - Team B had 2 miscommunications';
+          currentGame.winner = 'Team A (Blue) wins - Team B had 2 miscommunications!';
+        } else if (teamALost) {
+          currentGame.gameOver = true;
+          currentGame.winner = 'Team B (Orange) wins - Team A had 2 miscommunications!';
         } else if (teamAWonByInterception) {
           currentGame.gameOver = true;
-          currentGame.winner = 'Team A (Blue) - 2 successful interceptions!';
+          currentGame.winner = 'Team A (Blue) wins - 2 successful interceptions!';
         } else if (teamBWonByInterception) {
           currentGame.gameOver = true;
-          currentGame.winner = 'Team B (Orange) - 2 successful interceptions!';
+          currentGame.winner = 'Team B (Orange) wins - 2 successful interceptions!';
         }
 
         // Save round to history
