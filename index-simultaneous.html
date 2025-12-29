@@ -485,11 +485,34 @@
     }
 
     function generateCode() {
-      return [
-        Math.floor(Math.random() * 4) + 1,
-        Math.floor(Math.random() * 4) + 1,
-        Math.floor(Math.random() * 4) + 1
-      ];
+      const numbers = [1, 2, 3, 4];
+      const shuffled = numbers.sort(() => Math.random() - 0.5);
+      return shuffled.slice(0, 3); // Take first 3 numbers, guarantees no repeats
+    }
+
+    function generateUniqueCode() {
+      if (!currentGame.usedCodes) {
+        currentGame.usedCodes = [];
+      }
+
+      let attempts = 0;
+      const maxAttempts = 100;
+      
+      while (attempts < maxAttempts) {
+        const code = generateCode();
+        const codeStr = JSON.stringify(code);
+        
+        // Check if this code has been used before
+        if (!currentGame.usedCodes.includes(codeStr)) {
+          currentGame.usedCodes.push(codeStr);
+          return code;
+        }
+        
+        attempts++;
+      }
+      
+      // Fallback if somehow we can't find a unique code (very unlikely)
+      return generateCode();
     }
 
     async function createGame() {
@@ -512,6 +535,8 @@
         },
         rounds: [],
         currentRound: 1,
+        maxRounds: 8,
+        usedCodes: [], // Track codes already used
         phase: 'clues', // clues, guessing, results
         roundData: {
           A: { code: null, clues: null, guess: null, interception: null },
@@ -634,14 +659,15 @@
 
     function renderPhaseIndicator() {
       const phase = currentGame.phase;
+      const maxRounds = currentGame.maxRounds || 8;
       let phaseText = '';
       
       if (phase === 'clues') {
-        phaseText = '📝 Phase 1: Clue-Givers - Give your clues!';
+        phaseText = `📝 Round ${currentGame.currentRound}/${maxRounds} - Phase 1: Clue-Givers`;
       } else if (phase === 'guessing') {
-        phaseText = '🎯 Phase 2: Guessing & Interception';
+        phaseText = `🎯 Round ${currentGame.currentRound}/${maxRounds} - Phase 2: Guessing & Interception`;
       } else if (phase === 'results') {
-        phaseText = '📊 Phase 3: Results - Click to continue';
+        phaseText = `📊 Round ${currentGame.currentRound}/${maxRounds} - Phase 3: Results`;
       }
       
       document.getElementById('phaseIndicator').textContent = phaseText;
@@ -689,7 +715,7 @@
       } else if (phase === 'clues' && myRole === 'cluegiver') {
         // Clue-giving phase
         if (!myTeamRoundData.clues) {
-          const code = myTeamRoundData.code || generateCode();
+          const code = myTeamRoundData.code || generateUniqueCode();
           html += `
             <h2>Give Your Clues</h2>
             <div class="code-display">${code.join(' ')}</div>
@@ -708,6 +734,59 @@
               <strong>✓ Your clues submitted!</strong><br>
               Waiting for other clue-giver...
             </div>
+          `;
+        }
+
+        // Show opponent's clues if they've submitted
+        if (opponentRoundData.clues) {
+          html += `
+            <hr style="margin: 30px 0; border: 1px solid #e2e8f0;">
+            <h3>Team ${opponentTeam} Clues (Submitted)</h3>
+            <div class="alert alert-info">
+              Clue 1: ${opponentRoundData.clues[0]}<br>
+              Clue 2: ${opponentRoundData.clues[1]}<br>
+              Clue 3: ${opponentRoundData.clues[2]}
+            </div>
+          `;
+        } else {
+          html += `
+            <hr style="margin: 30px 0; border: 1px solid #e2e8f0;">
+            <p style="text-align: center; color: #718096;">Team ${opponentTeam} hasn't submitted clues yet...</p>
+          `;
+        }
+      } else if (phase === 'clues' && myRole === 'guesser') {
+        // Guessers wait during clue-giving phase, but can see submitted clues
+        html += '<h2>Clue-Givers Are Working...</h2>';
+        
+        if (myTeamRoundData.clues) {
+          html += `
+            <div class="alert alert-success">
+              <strong>✓ Your clue-giver submitted clues!</strong><br>
+              ${myTeamRoundData.clues.map((c, i) => `Clue ${i+1}: ${c}`).join('<br>')}
+            </div>
+          `;
+        } else {
+          html += `
+            <div class="alert alert-warning">
+              Waiting for your clue-giver to submit clues...
+            </div>
+          `;
+        }
+
+        if (opponentRoundData.clues) {
+          html += `
+            <hr style="margin: 30px 0; border: 1px solid #e2e8f0;">
+            <h3>Team ${opponentTeam} Clues (Submitted)</h3>
+            <div class="alert alert-info">
+              Clue 1: ${opponentRoundData.clues[0]}<br>
+              Clue 2: ${opponentRoundData.clues[1]}<br>
+              Clue 3: ${opponentRoundData.clues[2]}
+            </div>
+          `;
+        } else {
+          html += `
+            <hr style="margin: 30px 0; border: 1px solid #e2e8f0;">
+            <p style="text-align: center; color: #718096;">Team ${opponentTeam} clue-giver hasn't submitted yet...</p>
           `;
         }
       } else if (phase === 'guessing' && myRole === 'guesser') {
@@ -812,18 +891,34 @@
         return;
       }
 
+      // Safety check: ensure roundData exists
+      if (!currentGame.roundData) {
+        console.warn('roundData was undefined, reinitializing...');
+        currentGame.roundData = {
+          A: { code: null, clues: null, guess: null, interception: null },
+          B: { code: null, clues: null, guess: null, interception: null }
+        };
+      }
+
+      // Ensure team's roundData exists
+      if (!currentGame.roundData[myTeam]) {
+        currentGame.roundData[myTeam] = { code: null, clues: null, guess: null, interception: null };
+      }
+
       currentGame.roundData[myTeam].code = code;
       currentGame.roundData[myTeam].clues = clues;
 
       // Check if both teams submitted clues
-      if (currentGame.roundData.A.clues && currentGame.roundData.B.clues) {
+      if (currentGame.roundData.A?.clues && currentGame.roundData.B?.clues) {
         currentGame.phase = 'guessing';
       }
 
       try {
         await gameRef.set(currentGame);
+        console.log('Clues submitted successfully');
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Error submitting clues:', error);
+        alert('Error submitting clues: ' + error.message);
       }
     }
 
@@ -836,6 +931,12 @@
 
       if (guess.some(g => !g || g < 1 || g > 4)) {
         alert('Please enter valid numbers (1-4)');
+        return;
+      }
+
+      // Safety check
+      if (!currentGame.roundData || !currentGame.roundData[myTeam]) {
+        alert('Error: Game data is corrupt. Please refresh.');
         return;
       }
 
@@ -862,6 +963,12 @@
         return;
       }
 
+      // Safety check
+      if (!currentGame.roundData || !currentGame.roundData[myTeam]) {
+        alert('Error: Game data is corrupt. Please refresh.');
+        return;
+      }
+
       currentGame.roundData[myTeam].interception = interception;
 
       checkPhaseComplete();
@@ -874,6 +981,12 @@
     }
 
     async function skipInterception() {
+      // Safety check
+      if (!currentGame.roundData || !currentGame.roundData[myTeam]) {
+        alert('Error: Game data is corrupt. Please refresh.');
+        return;
+      }
+
       currentGame.roundData[myTeam].interception = [0, 0, 0]; // Dummy value
 
       checkPhaseComplete();
@@ -886,6 +999,12 @@
     }
 
     function checkPhaseComplete() {
+      // Safety check
+      if (!currentGame.roundData || !currentGame.roundData.A || !currentGame.roundData.B) {
+        console.error('roundData structure invalid');
+        return;
+      }
+
       // Check if both teams guessed and attempted interception
       if (currentGame.roundData.A.guess && currentGame.roundData.B.guess &&
           currentGame.roundData.A.interception && currentGame.roundData.B.interception) {
@@ -929,6 +1048,30 @@
     }
 
     async function nextRound() {
+      // Check if max rounds reached
+      if (currentGame.currentRound >= currentGame.maxRounds) {
+        currentGame.gameOver = true;
+        
+        // Determine winner by who has fewer miscommunications (or more interceptions as tiebreaker)
+        const teamAScore = currentGame.teamA.score.miscommunications - currentGame.teamA.score.interceptions;
+        const teamBScore = currentGame.teamB.score.miscommunications - currentGame.teamB.score.interceptions;
+        
+        if (teamAScore < teamBScore) {
+          currentGame.winner = 'Team A (Blue) - Fewer Mistakes!';
+        } else if (teamBScore < teamAScore) {
+          currentGame.winner = 'Team B (Orange) - Fewer Mistakes!';
+        } else {
+          currentGame.winner = 'Tie! Both teams played equally well!';
+        }
+        
+        try {
+          await gameRef.set(currentGame);
+        } catch (error) {
+          console.error('Error:', error);
+        }
+        return;
+      }
+
       currentGame.currentRound++;
       currentGame.phase = 'clues';
       currentGame.roundData = {
