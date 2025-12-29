@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Decrypto - Simultaneous Play</title>
+  <title>Decrypto</title>
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent; /* Remove blue highlight on tap for iOS */
     }
 
     body {
@@ -17,6 +18,8 @@
       min-height: 100vh;
       padding: 20px;
       color: #333;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
     .container {
@@ -62,6 +65,8 @@
       transition: all 0.3s;
       margin-right: 10px;
       margin-top: 10px;
+      min-height: 44px; /* iOS recommended minimum touch target */
+      touch-action: manipulation; /* Disable double-tap zoom */
     }
 
     .btn:hover {
@@ -102,10 +107,12 @@
       padding: 12px;
       border: 2px solid #e2e8f0;
       border-radius: 6px;
-      font-size: 16px;
+      font-size: 16px; /* Prevents zoom on iOS */
       margin-bottom: 15px;
       transition: border 0.3s;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      -webkit-appearance: none; /* Remove iOS default styling */
+      appearance: none;
     }
 
     input:focus, select:focus {
@@ -419,16 +426,209 @@
     }
 
     @media (max-width: 768px) {
-      .words-grid {
-        grid-template-columns: repeat(2, 1fr);
+      body {
+        padding: 10px;
       }
-      
+
+      .container {
+        max-width: 100%;
+      }
+
+      .card {
+        padding: 15px;
+        margin-bottom: 15px;
+      }
+
       h1 {
         font-size: 1.8em;
+        margin-bottom: 8px;
+      }
+
+      h2 {
+        font-size: 1.3em;
+        margin-bottom: 10px;
+      }
+
+      h3 {
+        font-size: 1.1em;
+      }
+
+      .btn {
+        padding: 10px 20px;
+        font-size: 14px;
+        margin-right: 5px;
+        margin-top: 8px;
+      }
+
+      .btn-large {
+        font-size: 1.1em;
+        padding: 15px 30px;
+      }
+
+      input, select {
+        padding: 10px;
+        font-size: 14px;
+        margin-bottom: 12px;
+      }
+
+      .words-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+
+      .word-card {
+        padding: 12px;
+        font-size: 1em;
+      }
+
+      .code-display {
+        padding: 20px;
+        font-size: 2em;
+        letter-spacing: 10px;
       }
 
       .score-display {
         flex-direction: column;
+        gap: 5px;
+      }
+
+      .score-item {
+        margin: 5px 0;
+        padding: 15px;
+        min-width: auto;
+      }
+
+      .score-value {
+        font-size: 2.5em;
+      }
+
+      .phase-indicator {
+        padding: 15px;
+        font-size: 1.1em;
+      }
+
+      .clue-input-grid {
+        grid-template-columns: 1fr;
+        gap: 5px;
+      }
+
+      .clue-label {
+        font-size: 1em;
+        margin-bottom: 5px;
+      }
+
+      .code-input-group input {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5em;
+      }
+
+      .clue-tracker-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+
+      .clue-column {
+        padding: 10px;
+      }
+
+      .clue-column-header {
+        font-size: 1.1em;
+      }
+
+      .clue-entry {
+        padding: 6px;
+        font-size: 0.85em;
+      }
+
+      .history-item {
+        padding: 12px;
+      }
+
+      .history-team-section {
+        padding: 12px;
+        font-size: 0.9em;
+      }
+
+      .result-row {
+        padding: 8px;
+        font-size: 0.9em;
+      }
+
+      .game-over {
+        padding: 25px;
+        font-size: 1.5em;
+      }
+
+      .alert {
+        padding: 12px;
+        font-size: 0.9em;
+      }
+
+      /* Make player info wrap better on mobile */
+      #playerInfo {
+        font-size: 0.85em;
+        word-break: break-all;
+      }
+
+      /* Better button layout on mobile */
+      div[style*="display: flex"] {
+        flex-direction: column;
+        align-items: stretch !important;
+      }
+
+      /* Stack header elements on mobile */
+      .card > div[style*="display: flex"]:first-of-type {
+        flex-direction: column;
+        align-items: flex-start !important;
+      }
+    }
+
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 1.5em;
+      }
+
+      h2 {
+        font-size: 1.2em;
+      }
+
+      .code-display {
+        font-size: 1.5em;
+        padding: 15px;
+        letter-spacing: 8px;
+      }
+
+      .score-value {
+        font-size: 2em;
+      }
+
+      .phase-indicator {
+        font-size: 1em;
+        padding: 12px;
+      }
+
+      .clue-tracker-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .words-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .btn {
+        width: 100%;
+        margin-right: 0;
+      }
+
+      .code-input-group {
+        gap: 5px;
+      }
+
+      .code-input-group input {
+        width: 45px;
+        height: 45px;
+        font-size: 1.3em;
       }
     }
   </style>
@@ -436,8 +636,8 @@
 <body>
   <div class="container">
     <div class="card">
-      <h1>🔐 Decrypto - Simultaneous Play</h1>
-      <p style="color: #718096; margin-bottom: 20px;">Both teams play at the same time! <span id="connectionStatus"></span></p>
+      <h1 style="text-align: center;">🔐 Decrypto</h1>
+      <p style="color: #718096; margin-bottom: 20px; text-align: center;"><span id="connectionStatus"></span></p>
       
       <div id="setupScreen">
         <h2>Game Setup</h2>
@@ -455,18 +655,16 @@
             <option value="A">Team A (Blue)</option>
             <option value="B">Team B (Orange)</option>
           </select>
-          <select id="roleSelect">
-            <option value="">Select Role</option>
-            <option value="guesser">Guesser</option>
-            <option value="cluegiver">Clue-Giver</option>
-          </select>
+          <p style="color: #718096; font-size: 0.9em; margin: 10px 0;">
+            Note: You can take on either role (clue-giver or guesser) each round!
+          </p>
           <button class="btn btn-secondary" onclick="joinGame()">Join Game</button>
         </div>
       </div>
 
       <div id="gameScreen" style="display: none;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap;">
-          <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+          <div style="flex: 1; min-width: 200px;">
             <h2 id="gameTitle">Game: <span id="gameCodeDisplay"></span></h2>
             <p id="playerInfo" style="color: #718096;"></p>
           </div>
@@ -512,7 +710,7 @@
 
   <script>
     // Game Version
-    const GAME_VERSION = "v2.3.1";
+    const GAME_VERSION = "v3.0.0";
 
     // Firebase Config
     const firebaseConfig = {
@@ -644,6 +842,7 @@
     }
 
     const WORD_BANK = [
+      // Original 64 words
       "PIANO", "THUNDER", "DIAMOND", "CASTLE", "ROBOT", "OCEAN", "ROCKET", "DRAGON",
       "MAGIC", "FOREST", "CLOCK", "MIRROR", "BOOK", "STAR", "MOON", "FIRE",
       "WATER", "EARTH", "WIND", "MOUNTAIN", "RIVER", "BRIDGE", "TOWER", "CROWN",
@@ -651,7 +850,15 @@
       "COIN", "RING", "KEY", "LOCK", "DOOR", "WINDOW", "LIGHT", "SHADOW",
       "CLOUD", "RAIN", "SNOW", "SUN", "NIGHT", "DAY", "TIME", "SPACE",
       "HEART", "MIND", "SOUL", "DREAM", "HOPE", "FEAR", "JOY", "PEACE",
-      "WAR", "KING", "QUEEN", "KNIGHT", "ANGEL", "DEMON", "GHOST", "SPIRIT"
+      "WAR", "KING", "QUEEN", "KNIGHT", "ANGEL", "DEMON", "GHOST", "SPIRIT",
+      // Additional 56 words (Total: 120)
+      "ANCHOR", "APPLE", "BALLOON", "BEACH", "BEAR", "BIRD", "BOTTLE", "BUTTER",
+      "CAMERA", "CANDLE", "CHAIR", "CHEESE", "CIRCLE", "COFFEE", "COMPASS", "CRYSTAL",
+      "DANCE", "DESERT", "EAGLE", "ENGINE", "FEATHER", "FLAME", "FLOWER", "FOUNTAIN",
+      "GALAXY", "GARDEN", "GIANT", "GOLD", "GUITAR", "HAMMER", "HONEY", "HORSE",
+      "ICE", "ISLAND", "JEWEL", "JUNGLE", "LADDER", "LAMP", "LEAF", "LIGHTNING",
+      "MARBLE", "MASK", "METAL", "MUSIC", "NEEDLE", "PAINT", "PAPER", "PEARL",
+      "PHOENIX", "PLANET", "PYRAMID", "RAINBOW", "RUBY", "SILVER", "SMOKE", "SNAKE"
     ];
 
     function generateGameCode() {
@@ -718,8 +925,8 @@
         usedCodes: [], // Track codes already used
         phase: 'clues', // clues, guessing, results
         roundData: {
-          A: { code: null, clues: null, guess: null, interception: null },
-          B: { code: null, clues: null, guess: null, interception: null }
+          A: { code: null, clues: null, guess: null, interception: null, clueGiverClaimed: false },
+          B: { code: null, clues: null, guess: null, interception: null, clueGiverClaimed: false }
         },
         gameOver: false,
         winner: null
@@ -764,10 +971,9 @@
 
       const code = document.getElementById('gameCodeInput').value.trim().toUpperCase();
       const team = document.getElementById('teamSelect').value;
-      const role = document.getElementById('roleSelect').value;
 
-      if (!code || !team || !role) {
-        alert('Please fill in all fields');
+      if (!code || !team) {
+        alert('Please enter game code and select your team');
         return;
       }
 
@@ -777,9 +983,9 @@
         
         gameCode = code;
         myTeam = team;
-        myRole = role;
+        myRole = 'flexible'; // Role is now determined by actions each round
         
-        console.log('Joining game as:', { playerId: myPlayerId, team: myTeam, role: myRole });
+        console.log('Joining game as:', { playerId: myPlayerId, team: myTeam, role: 'flexible' });
         
         // Store player identity in sessionStorage (per browser tab)
         sessionStorage.setItem(`decrypto_${myPlayerId}_gameCode`, gameCode);
@@ -834,7 +1040,7 @@
 
       document.getElementById('gameCodeDisplay').textContent = gameCode;
       document.getElementById('playerInfo').textContent = 
-        `You are: Team ${myTeam} - ${myRole === 'cluegiver' ? 'Clue-Giver' : 'Guesser'} | Round ${currentGame.currentRound} | Player ID: ${myPlayerId || 'Unknown'}`;
+        `You are: Team ${myTeam} | Round ${currentGame.currentRound} | Player ID: ${myPlayerId || 'Unknown'}`;
 
       document.getElementById('teamAMiscomm').textContent = currentGame.teamA?.score?.miscommunications || 0;
       document.getElementById('teamBMiscomm').textContent = currentGame.teamB?.score?.miscommunications || 0;
@@ -917,21 +1123,44 @@
       if (currentGame.gameOver) {
         html += '<p style="text-align: center; font-size: 1.2em;">Game is over!</p>';
       } else if (phase === 'clues' && myRole === 'cluegiver') {
-        // Clue-giving phase
+        // Clue-giving phase - now with claiming system
+        const isClaimed = myTeamRoundData.clueGiverClaimed;
+        
         if (!myTeamRoundData.clues) {
-          const code = myTeamRoundData.code || generateUniqueCode();
-          html += `
-            <h2>Give Your Clues</h2>
-            <div class="code-display">${code.join(' ')}</div>
-            <p style="margin-bottom: 15px;">Give one clue for each number:</p>
-            ${code.map((num, idx) => `
-              <div class="clue-input-grid">
-                <div class="clue-label">Clue for #${num}:</div>
-                <input type="text" id="clue${idx}" placeholder="Enter clue">
+          if (!isClaimed) {
+            // Show claim button - anyone on the team can claim
+            html += `
+              <h2>Clue-Giver Role Available</h2>
+              <div class="alert alert-info">
+                <strong>Ready to give clues this round?</strong><br>
+                Click below to claim the clue-giver role for Round ${currentGame.currentRound}.
               </div>
-            `).join('')}
-            <button class="btn btn-large" onclick="submitClues([${code}])">Submit Clues</button>
-          `;
+              <button class="btn btn-large btn-secondary" onclick="claimClueGiverRole()">
+                🙋 I'll Give Clues This Round!
+              </button>
+              <p style="margin-top: 15px; color: #718096; text-align: center;">
+                Waiting for someone on your team to claim the role...
+              </p>
+            `;
+          } else {
+            // Role claimed, show clue input
+            const code = myTeamRoundData.code || generateUniqueCode();
+            html += `
+              <h2>Give Your Clues</h2>
+              <div class="alert alert-success" style="margin-bottom: 15px;">
+                ✓ You claimed the clue-giver role for this round!
+              </div>
+              <div class="code-display">${code.join(' ')}</div>
+              <p style="margin-bottom: 15px;">Give one clue for each number:</p>
+              ${code.map((num, idx) => `
+                <div class="clue-input-grid">
+                  <div class="clue-label">Clue for #${num}:</div>
+                  <input type="text" id="clue${idx}" placeholder="Enter clue">
+                </div>
+              `).join('')}
+              <button class="btn btn-large" onclick="submitClues([${code}])">Submit Clues</button>
+            `;
+          }
         } else {
           html += `
             <div class="alert alert-success">
@@ -1133,14 +1362,14 @@
       if (!currentGame.roundData) {
         console.warn('roundData was undefined, reinitializing...');
         currentGame.roundData = {
-          A: { code: null, clues: null, guess: null, interception: null },
-          B: { code: null, clues: null, guess: null, interception: null }
+          A: { code: null, clues: null, guess: null, interception: null, clueGiverClaimed: false },
+          B: { code: null, clues: null, guess: null, interception: null, clueGiverClaimed: false }
         };
       }
 
       // Ensure team's roundData exists
       if (!currentGame.roundData[myTeam]) {
-        currentGame.roundData[myTeam] = { code: null, clues: null, guess: null, interception: null };
+        currentGame.roundData[myTeam] = { code: null, clues: null, guess: null, interception: null, clueGiverClaimed: false };
       }
 
       currentGame.roundData[myTeam].code = code;
@@ -1157,6 +1386,32 @@
       } catch (error) {
         console.error('Error submitting clues:', error);
         alert('Error submitting clues: ' + error.message);
+      }
+    }
+
+    async function claimClueGiverRole() {
+      // Safety check
+      if (!currentGame.roundData || !currentGame.roundData[myTeam]) {
+        alert('Error: Game data is corrupt. Please refresh.');
+        return;
+      }
+
+      // Check if already claimed by someone
+      if (currentGame.roundData[myTeam].clueGiverClaimed) {
+        alert('Someone else already claimed the clue-giver role for this round!');
+        return;
+      }
+
+      // Claim the role
+      currentGame.roundData[myTeam].clueGiverClaimed = true;
+
+      try {
+        await gameRef.set(currentGame);
+        console.log('Clue-giver role claimed');
+        renderGame(); // Immediately show the clue input form
+      } catch (error) {
+        console.error('Error claiming role:', error);
+        alert('Error claiming role: ' + error.message);
       }
     }
 
@@ -1416,8 +1671,8 @@
       currentGame.currentRound++;
       currentGame.phase = 'clues';
       currentGame.roundData = {
-        A: { code: null, clues: null, guess: null, interception: null },
-        B: { code: null, clues: null, guess: null, interception: null }
+        A: { code: null, clues: null, guess: null, interception: null, clueGiverClaimed: false },
+        B: { code: null, clues: null, guess: null, interception: null, clueGiverClaimed: false }
       };
 
       try {
