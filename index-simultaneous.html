@@ -710,7 +710,7 @@
 
   <script>
     // Game Version
-    const GAME_VERSION = "v3.1.1";
+    const GAME_VERSION = "v3.2.1";
 
     // Firebase Config
     const firebaseConfig = {
@@ -900,6 +900,53 @@
     function getRandomWords(count) {
       const shuffled = [...WORD_BANK].sort(() => Math.random() - 0.5);
       return shuffled.slice(0, count);
+    }
+
+    async function shuffleMyTeamWords() {
+      // Safety checks
+      if (!currentGame) {
+        alert('Error: No active game');
+        return;
+      }
+      
+      // Check if game has started
+      if (currentGame.rounds && currentGame.rounds.length > 0) {
+        alert('Cannot shuffle words - game has already started!');
+        return;
+      }
+      
+      // Check if still in round 1, clues phase
+      if (currentGame.currentRound !== 1 || currentGame.phase !== 'clues') {
+        alert('Cannot shuffle words - game has already started!');
+        return;
+      }
+      
+      // Confirm shuffle
+      if (!confirm('Shuffle your team\'s words? This will give you 4 new random words.')) {
+        return;
+      }
+      
+      try {
+        // Generate new words
+        const newWords = getRandomWords(4);
+        
+        // Update the appropriate team
+        if (myTeam === 'A') {
+          currentGame.teamA.words = newWords;
+        } else {
+          currentGame.teamB.words = newWords;
+        }
+        
+        // Save to Firebase
+        await gameRef.set(currentGame);
+        
+        console.log('Words shuffled successfully for Team', myTeam);
+        alert('✓ Words shuffled! Your team now has 4 new words.');
+        
+      } catch (error) {
+        console.error('Error shuffling words:', error);
+        alert('Error shuffling words: ' + error.message);
+      }
     }
 
     function generateCode() {
@@ -1127,9 +1174,26 @@
 
       const teamClass = myTeam === 'A' ? 'team-a' : 'team-b';
       
-      const html = `
+      // Check if game has started (any round has history)
+      const gameHasStarted = currentGame.rounds && currentGame.rounds.length > 0;
+      
+      let html = `
         <div class="card ${teamClass}">
-          <h2>Your Team (Team ${myTeam}) - Secret Words</h2>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2 style="margin: 0;">Your Team (Team ${myTeam}) - Secret Words</h2>
+      `;
+      
+      // Only show shuffle button if game hasn't started
+      if (!gameHasStarted && currentGame.currentRound === 1 && currentGame.phase === 'clues') {
+        html += `
+            <button class="btn btn-secondary" onclick="shuffleMyTeamWords()" style="margin: 0;">
+              🔀 Shuffle Words
+            </button>
+        `;
+      }
+      
+      html += `
+          </div>
           <div class="words-grid">
             ${myTeamData.words.map((word, idx) => `
               <div class="word-card">
@@ -1138,8 +1202,17 @@
               </div>
             `).join('')}
           </div>
-        </div>
       `;
+      
+      if (!gameHasStarted && currentGame.currentRound === 1 && currentGame.phase === 'clues') {
+        html += `
+          <p style="color: #718096; font-size: 0.85em; margin-top: 10px; text-align: center;">
+            💡 Don't like these words? Click "Shuffle Words" to get new ones! (Only available before Round 1 starts)
+          </p>
+        `;
+      }
+      
+      html += `</div>`;
       
       document.getElementById('myTeamSection').innerHTML = html;
     }
@@ -1253,55 +1326,46 @@
         const clueGiverPlayerId = myTeamRoundData.clueGiverPlayerId;
         const iAmClueGiver = clueGiverPlayerId === myPlayerId;
         
+        html += '<h2>Guessing Phase</h2>';
+        
         if (iAmClueGiver) {
-          // Clue-giver waits during guessing phase
-          html += '<h2>Guessers Are Working...</h2>';
           html += '<div class="alert alert-success" style="margin-bottom: 20px;">';
           html += '<strong>✓ You gave the clues this round!</strong><br>';
-          html += 'Now your teammates are guessing. Please wait for the results.';
+          html += 'You cannot guess your own code, but you can still attempt an interception!';
           html += '</div>';
-          
-          // Show status of both teams
-          html += '<div class="alert alert-info">';
-          html += '<strong>Status:</strong><br>';
-          html += `Team A Guess: ${currentGame.roundData.A.guess ? '✓ Submitted' : '⏳ Pending'}<br>`;
-          html += `Team A Interception: ${currentGame.roundData.A.interception ? '✓ Submitted' : '⏳ Pending'}<br>`;
-          html += `Team B Guess: ${currentGame.roundData.B.guess ? '✓ Submitted' : '⏳ Pending'}<br>`;
-          html += `Team B Interception: ${currentGame.roundData.B.interception ? '✓ Submitted' : '⏳ Pending'}`;
-          html += '</div>';
-        } else {
-          // Guessers participate in guessing & interception
-          html += '<h2>Guessing Phase</h2>';
-          
-          // Show status of both teams
-          html += '<div class="alert alert-info" style="margin-bottom: 20px;">';
-          html += '<strong>Status:</strong><br>';
-          html += `Team A Guess: ${currentGame.roundData.A.guess ? '✓ Submitted' : '⏳ Pending'}<br>`;
-          html += `Team A Interception: ${currentGame.roundData.A.interception ? '✓ Submitted' : '⏳ Pending'}<br>`;
-          html += `Team B Guess: ${currentGame.roundData.B.guess ? '✓ Submitted' : '⏳ Pending'}<br>`;
-          html += `Team B Interception: ${currentGame.roundData.B.interception ? '✓ Submitted' : '⏳ Pending'}`;
-          html += '</div>';
-          
-          // Guess your own team's code
+        }
+        
+        // Show status of both teams
+        html += '<div class="alert alert-info" style="margin-bottom: 20px;">';
+        html += '<strong>Status:</strong><br>';
+        html += `Team A Guess: ${currentGame.roundData.A.guess ? '✓ Submitted' : '⏳ Pending'}<br>`;
+        html += `Team A Interception: ${currentGame.roundData.A.interception ? '✓ Submitted' : '⏳ Pending'}<br>`;
+        html += `Team B Guess: ${currentGame.roundData.B.guess ? '✓ Submitted' : '⏳ Pending'}<br>`;
+        html += `Team B Interception: ${currentGame.roundData.B.interception ? '✓ Submitted' : '⏳ Pending'}`;
+        html += '</div>';
+        
+        // Guess your own team's code (only if NOT the clue-giver)
+        if (!iAmClueGiver) {
           if (myTeamRoundData.clues && !myTeamRoundData.guess) {
-          html += `
-            <div class="alert alert-info">
-              <strong>Your Team's Clues:</strong><br>
-              ${myTeamRoundData.clues.map((c, i) => `Clue ${i+1}: ${c}`).join('<br>')}
-            </div>
-            <p style="margin: 15px 0;">Guess your team's code:</p>
-            <div class="code-input-group">
-              <input type="number" id="guess0" min="1" max="4">
-              <input type="number" id="guess1" min="1" max="4">
-              <input type="number" id="guess2" min="1" max="4">
-            </div>
-            <button class="btn" onclick="submitGuess()">Submit Guess</button>
-          `;
-        } else if (myTeamRoundData.guess) {
-          html += `<div class="alert alert-success">✓ Your guess submitted!</div>`;
+            html += `
+              <div class="alert alert-info">
+                <strong>Your Team's Clues:</strong><br>
+                ${myTeamRoundData.clues.map((c, i) => `Clue ${i+1}: ${c}`).join('<br>')}
+              </div>
+              <p style="margin: 15px 0;">Guess your team's code:</p>
+              <div class="code-input-group">
+                <input type="number" id="guess0" min="1" max="4">
+                <input type="number" id="guess1" min="1" max="4">
+                <input type="number" id="guess2" min="1" max="4">
+              </div>
+              <button class="btn" onclick="submitGuess()">Submit Guess</button>
+            `;
+          } else if (myTeamRoundData.guess) {
+            html += `<div class="alert alert-success">✓ Your guess submitted!</div>`;
+          }
         }
 
-        // Intercept opponent's code
+        // Intercept opponent's code - EVERYONE can do this, including clue-giver!
         if (opponentRoundData.clues && !myTeamRoundData.interception) {
           html += `
             <hr style="margin: 30px 0;">
@@ -1321,7 +1385,6 @@
         } else if (myTeamRoundData.interception) {
           html += `<div class="alert alert-success">✓ Interception submitted!</div>`;
         }
-        }  // End of else block for guessers
       } else if (phase === 'results') {
         // Results phase - EVERYONE can see this (both clue-givers and guessers)
         html += '<h2>📊 Round ' + currentGame.currentRound + ' Results</h2>';
